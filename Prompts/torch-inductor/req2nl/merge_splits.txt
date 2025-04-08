@@ -1,0 +1,88 @@
+### Please describe the type of PyTorch model that has the pattern shown in the code. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the pattern
+CallFunction(
+    aten.mul,
+    CallFunction(
+        aten.mul,
+        CallFunction(mkldnn._convolution_pointwise.default, *_conv_args, _users=2),
+        0.5,
+    ),
+    CallFunction(
+        aten.add,
+        CallFunction(
+            aten.erf,
+            CallFunction(
+                aten.mul,
+                CallFunction(
+                    mkldnn._convolution_pointwise.default, *_conv_args, _users=2
+                ),
+                0.7071067811865476,
+            ),
+        ),
+        1,
+    ),
+)
+
+# Description
+The model should contain the following pattern:
+```
+t1 = conv(input_tensor) # Apply pointwise convolution with kernel size 1 to the input tensor
+t2 = t1 * 0.5 # Multiply the output of the convolution by 0.5
+t3 = t1 * 0.7071067811865476 # Multiply the output of the convolution by 0.7071067811865476
+t4 = torch.erf(t3) # Apply the error function to the output of the convolution
+t5 = t4 + 1 # Add 1 to the output of the error function
+t6 = t2 * t5 # Multiply the output of the convolution by the output of the error function
+```
+This pattern characterizes scenarios where the output of a pointwise convolution is multiplied by a constant `0.5`, and then the output of the convolution is multiplied by another constant `0.7071067811865476`, and then the error function is applied to the output of the convolution, and then `1` is added to the output of the error function, and then the output of the convolution is multiplied by the output of the error function.
+
+### Please describe the type of PyTorch model that can reach out `optimization() # Trigger here` line in function `TorchSplit._match`. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the function `TorchSplit._match` and its helper functions
+TorchSplit(
+    CallFunction(
+        operator.getitem,
+        TorchSplit(
+            KeywordArg("first_split_input"),
+            KeywordArg("first_split_sections"),
+        ),
+        Ignored(),
+    ),
+    KeywordArg("next_split_sections"),
+)
+
+class TorchSplit(CallFunction):
+    """
+    Matches a call to torch.split if it is in a normalized form. Ensures that all users of
+    splits are unique getitems.
+    """
+
+    def __init__(self, arg, sizes, func=torch.split):
+        # using KeywordArg("dim") for `dim` checks they all match
+        super().__init__(func, arg, sizes, _users=MULTIPLE, dim=KeywordArg("dim"))
+
+    def _match(self, node: torch.fx.Node, ctx: MatchContext):
+        m = super()._match(node, ctx)
+        if not m:
+            return m
+        split_sections = node.args[1]
+        if not isinstance(split_sections, (list, tuple)):
+            return FailedMatch("split not normalized")
+        # check users are all unique getitems
+        seen_idxs = set()
+        for user in node.users:
+            if not CallFunction(operator.getitem, Arg(), Arg()).match(user):
+                # This should ideally never happen. Split user should always be a getitem
+                return FailedMatch(f"user of split not a getitem: {user}")
+            if not isinstance(user.args[1], int):
+                return FailedMatch("only integer getitems are handled")
+            if user.args[1] in seen_idxs:
+                return FailedMatch(f"duplicate getitem {user.args[1]}")
+            if user.args[-1] < 0:  # type: ignore[operator]
+                # This shouldn't ideally happen as dynamo normalizes indexes to positive
+                return FailedMatch("negative index")
+            seen_idxs.add(user.args[1])
+        optimization() # Trigger here
+        return m
+
+# Description

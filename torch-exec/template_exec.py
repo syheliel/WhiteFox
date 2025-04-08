@@ -1,9 +1,9 @@
-import argparse
+import click
 import astunparse
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Any, Callable
 import ast
 import traceback
 import torch
@@ -12,21 +12,19 @@ from torch_utils import test_wrapper
 from constant.returntypes import ResType
 
 
-OUT_DIR, RESULT_DIR, TEST_DIR, TEST_LOG_PATH, TEMP_LOG_PATH, DEVICE = (
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-)
-COV = False
-CODE_PARSER = None
-TEST_WRAPPER = None
+# default values to make lint check happy :)
+OUT_DIR: Path = Path("out-4")
+RESULT_DIR: Path = Path("result-4")
+TEST_DIR: Path = Path("test-4")
+TEST_LOG_PATH: Path = TEST_DIR / "tested.log"
+TEMP_LOG_PATH: Path = TEST_DIR / "atemp.py"
+DEVICE: str = "cpu"
+COV: bool = False
+TEST_WRAPPER: Optional[Callable] = None
 
 OUTPUT_LIMIT: int = 1024
 SEED: int = 420
-MATCH_COV_FILE = Path("/tmp/match_trigger.log")
+MATCH_COV_FILE: Path = Path("/tmp/match_trigger.log")
 MAXIMUM_TESTCASES = 10
 
 
@@ -168,7 +166,7 @@ class CodeParser:
                     args = value.args
 
                     try:
-                        tgt = node.targets[0].id
+                        tgt = node.targets[0].id # type: ignore
                     except Exception as e:
                         continue
 
@@ -258,6 +256,7 @@ class CodeParser:
         else:
             return ""
 
+CODE_PARSER: CodeParser = CodeParser("torch")
 
 def _cross_check(func_def_code, tensors, filename):
     func_def_code += f"test_inputs = [{', '.join(tensors)}]\n"
@@ -409,34 +408,29 @@ def core_loop(args):
             exit(123)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+@click.command()
+@click.option('--lib', type=str, default='torch', help='Library to use (currently only torch is supported)')
+@click.option('--out-dir', type=str, default="out-5", help='Output directory')
+@click.option('--res-dir', type=str, default="res-5", help='Result directory')
+@click.option('--test-dir', type=str, default="test-5", help='Test directory')
+@click.option('--cov', is_flag=True, default=False, help='Enable coverage tracking')
+@click.option('--validate', is_flag=True, default=False, help='Run in validation mode')
+@click.option('--device', type=str, default='cpu', help='Device to run on (cpu, cuda, etc.)')
+def main(lib, out_dir, res_dir, test_dir , cov, validate, device):
+    """Template execution script for testing PyTorch models."""
+    global OUT_DIR, RESULT_DIR, TEST_DIR, TEST_LOG_PATH, TEMP_LOG_PATH, DEVICE, COV, MATCH_COV_FILE
+    OUT_DIR = Path(out_dir)
+    RESULT_DIR = Path(res_dir)
+    TEST_DIR = Path(test_dir)
+    TEST_LOG_PATH = TEST_DIR / "tested.log"
+    TEMP_LOG_PATH = TEST_DIR / "atemp.py"
+    CRASH_LOG_PATH = TEST_DIR / "crash.log"
+    DEVICE = device
+    COV = cov
 
-    parser.add_argument("--lib", type=str, default="torch")
-
-    parser.add_argument("--out_dir", type=str, default=None)
-    parser.add_argument("--res_dir", type=str, default=None)
-    parser.add_argument("--test_dir", type=str, default=None)
-    parser.add_argument("--test_log_path", type=str, default=None)
-    parser.add_argument("--temp_log_path", type=str, default=None)
-    parser.add_argument("--cov", action="store_true", default=False)
-    parser.add_argument("--validate", action="store_true", default=False)
-    parser.add_argument("--device", type=str, default="cpu")
-
-    args = parser.parse_args()
-    lib = args.lib
-
-    global OUT_DIR, RESULT_DIR, TEST_DIR, TEST_LOG_PATH, TEMP_LOG_PATH, DEVICE, COV
-    OUT_DIR = Path(args.out_dir)
-    RESULT_DIR = Path(args.res_dir)
-    TEST_DIR = Path(args.test_dir)
-    TEST_LOG_PATH = Path(args.test_log_path)
-    TEMP_LOG_PATH = Path(args.temp_log_path)
-    DEVICE = args.device
-    COV = args.cov
-
-    RESULT_DIR.mkdir(exist_ok=True)
-    TEST_DIR.mkdir(exist_ok=True)
+    # Ensure directories exist
+    RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    TEST_DIR.mkdir(parents=True, exist_ok=True)
 
     global CODE_PARSER, TEST_WRAPPER
     if lib == "torch":
@@ -447,10 +441,17 @@ def main() -> None:
         raise NotImplementedError(f"Library {lib} is not supported yet")
 
     if COV and lib == "torch":
-        global MATCH_COV_FILE
         MATCH_COV_FILE = Path("/", "tmp", f"trigger-{RESULT_DIR.name}")
-        torch.version.log_path = str(MATCH_COV_FILE)
+        torch.version.log_path = str(MATCH_COV_FILE) # type: ignore
 
+    # Create a simple args object to maintain compatibility with core_loop
+    class Args:
+        def __init__(self):
+            self.validate = False
+    
+    args = Args()
+    args.validate = validate
+    
     core_loop(args)
 
 

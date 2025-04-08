@@ -1,0 +1,57 @@
+### Please generate a valid PyTorch model example with public PyTorch APIs that meets the specified requirements. Plus, please also generate the input tensor for the newly generated model.
+
+# Description of requirements
+The model should contain the following pattern:
+```
+t1 = conv(input_tensor) # Apply pointwise convolution with kernel size 1 to the input tensor
+t2 = t1 * 0.5 # Multiply the output of the convolution by 0.5
+t3 = t1 * 0.7071067811865476 # Multiply the output of the convolution by 0.7071067811865476
+t4 = torch.erf(t3) # Apply the error function to the output of the convolution
+t5 = t4 + 1 # Add 1 to the output of the error function
+t6 = t2 * t5 # Multiply the output of the convolution by the output of the error function
+```
+This pattern characterizes scenarios where the output of a pointwise convolution is multiplied by a constant `0.5`, and then the output of the convolution is multiplied by another constant `0.7071067811865476`, and then the error function is applied to the output of the convolution, and then `1` is added to the output of the error function, and then the output of the convolution is multiplied by the output of the error function.
+
+# Model
+class Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = torch.nn.Conv2d(3, 8, 1, stride=1, padding=1)
+ 
+    def forward(self, x1):
+        v1 = self.conv(x1)
+        v2 = v1 * 0.5
+        v3 = v1 * 0.7071067811865476
+        v4 = torch.erf(v3)
+        v5 = v4 + 1
+        v6 = v2 * v5
+        return v6
+
+# Initializing the model
+m = Model()
+
+# Inputs to the model
+x1 = torch.randn(1, 3, 64, 64)
+__output__ = m(x1)
+
+### Please generate a valid PyTorch model example with public PyTorch APIs that meets the specified requirements. Plus, please also generate the input tensor for the newly generated model. The model should be different from the previous one.
+
+# Description of requirements
+The model should contain the following pattern:
+```
+q = query.permute([0, 2, 1, 3]) # Permute the dimensions of the query tensor
+k = key.permute([0, 2, 1, 3]) # Permute the dimensions of the key tensor
+v = value.permute([0, 2, 1, 3]) # Permute the dimensions of the value tensor
+bs = q.size(0) # Get the size of the first dimension of the query tensor
+k_len = k.size(-2) # Get the size of the second to last dimension of the key tensor
+scores = q @ k.transpose(-2, -1) # Compute the dot product of the query and the transposed key tensor
+scores = scores.div(inv_scale) # Divide the scores by the inverse scale
+fill_value = torch.full((), -float("inf"), dtype=query.dtype, device=query.device) # Create a tensor filled with negative infinity
+attn_mask = (attn_mask == 0).view((bs, 1, 1, k_len)).expand_as(scores) # Create an attention mask
+output = torch.nn.functional.dropout(
+    torch.softmax(scores.masked_fill(attn_mask, fill_value), dim=-1), dropout_p
+) @ v # Apply dropout to the softmax of the scores, then compute the dot product with the value tensor
+```
+This pattern characterizes a scaled dot-product attention mechanism, which is a key component of Transformer models. The query, key, and value tensors are permuted, then the dot product of the query and key tensors is computed, scaled, and passed through a softmax function. An attention mask is applied to the scores before the softmax function. Dropout is then applied to the softmax output, and the result is multiplied by the value tensor.
+
+# Model

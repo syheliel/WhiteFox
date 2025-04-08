@@ -1,0 +1,133 @@
+### Please describe the type of PyTorch model that has the pattern shown in the code. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the pattern
+CallFunction(
+    aten.mul,
+    CallFunction(
+        aten.mul,
+        CallFunction(mkldnn._convolution_pointwise.default, *_conv_args, _users=2),
+        0.5,
+    ),
+    CallFunction(
+        aten.add,
+        CallFunction(
+            aten.erf,
+            CallFunction(
+                aten.mul,
+                CallFunction(
+                    mkldnn._convolution_pointwise.default, *_conv_args, _users=2
+                ),
+                0.7071067811865476,
+            ),
+        ),
+        1,
+    ),
+)
+
+# Description
+The model should contain the following pattern:
+```
+t1 = conv(input_tensor) # Apply pointwise convolution with kernel size 1 to the input tensor
+t2 = t1 * 0.5 # Multiply the output of the convolution by 0.5
+t3 = t1 * 0.7071067811865476 # Multiply the output of the convolution by 0.7071067811865476
+t4 = torch.erf(t3) # Apply the error function to the output of the convolution
+t5 = t4 + 1 # Add 1 to the output of the error function
+t6 = t2 * t5 # Multiply the output of the convolution by the output of the error function
+```
+This pattern characterizes scenarios where the output of a pointwise convolution is multiplied by a constant `0.5`, and then the output of the convolution is multiplied by another constant `0.7071067811865476`, and then the error function is applied to the output of the convolution, and then `1` is added to the output of the error function, and then the output of the convolution is multiplied by the output of the error function.
+
+### Please describe the type of PyTorch model that 
+1) has the pattern shown in the code, and 2) can reach out `return True` line in function `_is_foldable_pattern`. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the pattern:
+_binary_ops = [aten.add.Tensor, aten.sub.Tensor, aten.mul.Tensor, aten.div.Tensor]
+_computation_calls = [CallFunction(aten.convolution.default, *_conv_args, _users=1)]
+
+CallFunction(binary_op, _computation_call, KeywordArg("other"))
+
+# Code of the function `_is_foldable_pattern` and its helper functions
+def _op_not_broadcasting_with_conv(weight_tensor, other_tensor):
+    # According to opDoesNotBroadCastWithConv of frozen_conv_folding.cpp
+    weight_shape = weight_tensor.shape
+    other_shape = other_tensor.shape
+    if len(weight_shape) < len(other_shape):
+        return False
+    if len(weight_shape) == len(other_shape) + 1:
+        # weight shape is [o, i, *], other_shape is [o, 1...].
+        for i in reversed(range(len(other_shape))):
+            if i == 0 and weight_shape[0] == other_shape[i]:
+                continue
+            if other_shape[i] != 1:
+                return False
+    else:
+        # weight shape is [o, i, *], other_shape is [1, i, *]
+        for i in reversed(range(len(other_shape))):
+            if i == 1 and weight_shape[0] == other_shape[i]:
+                continue
+            if other_shape[i] != 1:
+                return False
+    return True
+
+def _check_conv_and_broadcast_op(conv_node, other):
+    # According to checkConvAndBroadcastingOpPreConditions of frozen_conv_folding.cpp.
+    # conv.weight
+    if conv_node.args[1].op != "get_attr":
+        return False
+    # conv.bias
+    if conv_node.args[1] is not None and conv_node.args[1].op != "get_attr":
+        return False
+    if (
+        not isinstance(other, int)
+        and not isinstance(other, float)
+        and other.op != "get_attr"
+    ):
+        return False
+
+    if not len(conv_node.args[1].users) == 1:
+        return False
+
+    weight_meta_value = conv_node.args[1].meta.get("val")
+    if weight_meta_value is None:
+        return False
+    # Avoid fusing op that causes type promotion
+    # restricting to float avoids int/float difficulties with scalar overload
+    if not weight_meta_value.is_floating_point():
+        return False
+    if isinstance(other, torch.fx.Node) and other.op == "get_attr":
+        other_meta_value = other.meta.get("val")
+        if not other_meta_value.is_floating_point():
+            return False
+        if (
+            torch.promote_types(other_meta_value.dtype, weight_meta_value.dtype)
+            != weight_meta_value.dtype
+        ):
+            if not conv_node.meta.get("_allow_conv_mixed_dtype_folding", False):
+                return False
+
+            if (
+                other_meta_value.dtype != torch.float
+                and weight_meta_value.dtype not in (torch.float16, torch.bfloat16)
+            ):
+                return False
+
+        if not _op_not_broadcasting_with_conv(weight_meta_value, other_meta_value):
+            return False
+    else:
+        # TODO: support scalar case
+        return False
+
+    return True
+
+def _is_foldable_pattern(match):
+    binary_node = match.output_node()
+    computation_node = binary_node.args[0]
+    other = binary_node.args[1]
+    if binary_node.args[0].target not in _computation_ops:
+        computation_node = binary_node.args[1]
+        other = binary_node.args[0]
+    if binary_node.args[0].target == aten.convolution.default:
+        return _check_conv_and_broadcast_op(computation_node, other)
+
+    return False
+
+# Description

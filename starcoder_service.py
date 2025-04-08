@@ -23,9 +23,9 @@ from math import ceil
 import os
 import json
 from pathlib import Path
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.models.auto.tokenization_auto import AutoTokenizer
+from transformers.generation.stopping_criteria import (
     StoppingCriteria,
     StoppingCriteriaList,
 )
@@ -175,7 +175,7 @@ class StarCoder:
         return outputs
 
 
-def scan_prompt(prompt_dirs: Path, existing_prompts: set, target: str = None):
+def scan_prompt(prompt_dirs: Path, existing_prompts: set, target: str | None = None):
     new_prompts = set()
     for target_dir in prompt_dirs.iterdir():
         if not target_dir.is_dir():

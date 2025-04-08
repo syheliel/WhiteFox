@@ -1,0 +1,82 @@
+### Please describe the type of PyTorch model that has the pattern shown in the code. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the pattern
+CallFunction(
+    aten.mul,
+    CallFunction(
+        aten.mul,
+        CallFunction(mkldnn._convolution_pointwise.default, *_conv_args, _users=2),
+        0.5,
+    ),
+    CallFunction(
+        aten.add,
+        CallFunction(
+            aten.erf,
+            CallFunction(
+                aten.mul,
+                CallFunction(
+                    mkldnn._convolution_pointwise.default, *_conv_args, _users=2
+                ),
+                0.7071067811865476,
+            ),
+        ),
+        1,
+    ),
+)
+
+# Description
+The model should contain the following pattern:
+```
+t1 = conv(input_tensor) # Apply pointwise convolution with kernel size 1 to the input tensor
+t2 = t1 * 0.5 # Multiply the output of the convolution by 0.5
+t3 = t1 * 0.7071067811865476 # Multiply the output of the convolution by 0.7071067811865476
+t4 = torch.erf(t3) # Apply the error function to the output of the convolution
+t5 = t4 + 1 # Add 1 to the output of the error function
+t6 = t2 * t5 # Multiply the output of the convolution by the output of the error function
+```
+This pattern characterizes scenarios where the output of a pointwise convolution is multiplied by a constant `0.5`, and then the output of the convolution is multiplied by another constant `0.7071067811865476`, and then the error function is applied to the output of the convolution, and then `1` is added to the output of the error function, and then the output of the convolution is multiplied by the output of the error function.
+
+### Please describe the type of PyTorch model that 
+1) has the pattern shown in the code, and 2) can reach out `optimization() # Trigger here` line in function `mutate_cat_node`. The description should be concise and clear. Use code to illustrate patterns or constraints as needed. Please only describe the characteristics of the model. Do not describe the function code or what happens after the optimization is triggered.
+
+# Code of the pattern:
+@register_graph_pattern(
+    CallFunction(
+        torch.cat,
+        getitem_split,
+        dim=Ignored(),
+        _users=MULTIPLE,
+    ),
+    pass_dict=split_cat_pass,
+    extra_check=config_flag("split_cat_fx_passes"),
+)
+
+# Code of the function `mutate_cat_node` and its helper functions
+def mutate_cat_node(match: Match, split_sections: List[int], dim: int):
+    if not isinstance(split_sections, (list, tuple)):  # Unnormalized split
+        return
+    graph = match.graph
+    split_node = next(node for node in match.nodes if node.target == torch.split)
+    split_input, split_size, split_dim = _get_split_args_default(split_node)
+    # if the cat and split have different dims, return
+    # Find the next users (i.e. users after the getitem)
+    next_users = find_next_users(split_node)
+    for cat_user in next_users:
+        if cat_user.target == torch.cat:
+            cat_dim = get_arg_value(cat_user, 1, "dim") or 0
+            # check that all getitems in the cat_user from the same node
+            # check the input of the cat has all getitem from the split
+            if split_dim != cat_dim or not has_same_parent_node(cat_user):
+                continue
+            # find the index of getitems to be cat
+            indices, idx_to_getitem = [], {}
+            for getitem in cat_user.args[0]:  # type: ignore[union-attr]
+                indices.append(getitem.args[1])  # type: ignore[union-attr]
+                idx_to_getitem[getitem.args[1]] = getitem  # type: ignore[union-attr]
+            # the gettitems to be merged must be consecutive, otherwise
+            # returned sliced tensor could be wrong
+            if not is_sorted_and_consecutive(indices):
+                continue
+            optimization() # Trigger here
+
+# Description

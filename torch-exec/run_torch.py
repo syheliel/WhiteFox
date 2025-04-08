@@ -7,10 +7,11 @@ from pathlib import Path
 import argparse
 import os
 import torch
+from logger import logger
 
 
 def get_last_tested():
-    tested_path = TEST_LOG_PATH
+    tested_path = TEST_DIR / "tested.log"
     if tested_path.exists() == False:
         return "start"
 
@@ -31,8 +32,8 @@ def combine_cov(cov_dir, cov_datafile):
     ]
     output = sp.run(" ".join(combine_cmds), stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
     if output.returncode != 0:
-        print("combine coverage failed")
-        print(output.stderr.decode())
+        logger.error("combine coverage failed")
+        logger.error(output.stderr.decode())
         return
 
 
@@ -51,7 +52,7 @@ def collect_cov(cov_datafile):
         ],
     )
     if ret.returncode != 0:
-        print("collect coverage failed")
+        logger.error("collect coverage failed")
         return
 
 
@@ -98,10 +99,8 @@ if __name__ == "__main__":
     if args.validate:
         res_name += "-validate"
     RESULT_DIR = Path(args.res_dir) / res_name
+    RESULT_DIR.mkdir(parents=True, exist_ok=True)
     TEST_DIR = RESULT_DIR / "test"
-    TEST_LOG_PATH = TEST_DIR / "tested.log"
-    TEMP_LOG_PATH = TEST_DIR / "atemp.py"
-    CRASH_LOG_PATH = TEST_DIR / "crash.log"
 
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     TEST_DIR.mkdir(parents=True, exist_ok=True)
@@ -113,7 +112,7 @@ if __name__ == "__main__":
 
     log_file = open(log_file, "a")
     stderr_file = open(err_file, "a")
-    crash_file = open(CRASH_LOG_PATH, "a")
+    crash_file = open(TEST_DIR / "crash.log", "a")
     timeout_file = open(RESULT_DIR / "timeout.log", "a")
     kill_file = open(RESULT_DIR / "killed.log", "a")
     start_time = time.time()
@@ -134,36 +133,38 @@ if __name__ == "__main__":
         env = {**env, **os.environ}
 
         if args.cov:
-            cov_data = cov_dir / f".coverage.{cov_cnt}"
-            commands = [
+            cov_data: Path = cov_dir / f".coverage.{cov_cnt}"
+            python_cmd: list[str] = [
                 "python",
                 "-m",
                 "coverage",
                 "run",
-                f"--source={torch.__path__[0]}",
+                f"--source={torch.__path__[0]}", # type: ignore
                 f"--data-file={cov_data}",
                 "-a",
             ]
             cov_cnt += 1
         else:
-            commands = ["python"]
+            python_cmd = ["python"]
 
-        commands += [
-            "template_exec.py",
-            f"--out_dir={OUT_DIR}",
-            f"--res_dir={RESULT_DIR}",
-            f"--test_dir={TEST_DIR}",
-            f"--test_log_path={TEST_LOG_PATH}",
-            f"--temp_log_path={TEMP_LOG_PATH}",
+        script_cmd: list[str] = [
+            "./torch-exec/template_exec.py",
+            f"--out-dir={OUT_DIR}",
+            f"--res-dir={RESULT_DIR}",
+            f"--test-dir={TEST_DIR}",
             f"--device={DEVICE}",
         ]
         if args.validate:
-            commands.append("--validate")
+            script_cmd.append("--validate")
         if args.cover:
-            commands.append("--cov")
+            python_cmd.append("--cov")
+
+        # Log the command being executed
+        final_cmd:str = " ".join(python_cmd + script_cmd)
+        logger.info(f"Executing command: {final_cmd}")
 
         process = sp.Popen(
-            commands,
+            python_cmd + script_cmd,
             stdout=log_file,
             stderr=stderr_file,
             env=env,
@@ -172,7 +173,7 @@ if __name__ == "__main__":
         count = 0
         while True:
             cur_test_target = get_last_tested()
-            print("Current test target:", cur_test_target)
+            logger.info(f"Current test target: {cur_test_target}")
             result = process.poll()
             if result is None:
                 time.sleep(1)
@@ -181,18 +182,18 @@ if __name__ == "__main__":
                     count = 0
                     continue
                 elif count >= TIMEOUT:
-                    print("TIMEOUT, Kill process")
+                    logger.warning("TIMEOUT, Kill process")
                     process.kill()
                     timeout_file.write(f"{cur_test_target} TIMEOUT\n")
-                    timeout_file.write(TEMP_LOG_PATH.read_text() + "\n")
+                    timeout_file.write(str(TEST_DIR / "atemp.py") + "\n")
                     timeout_file.flush()
                 else:
                     count += 1
                     continue
             elif result == 233:
-                print("FINISH")
+                logger.info("FINISH")
                 used_time = time.time() - start_time
-                print("Used time:", used_time)
+                logger.info(f"Used time: {used_time}")
 
                 if args.cov:
                     # combine the coverage
@@ -203,22 +204,25 @@ if __name__ == "__main__":
                 log_file.write(f"\nUsed time: {used_time}")
                 exit(233)
             elif result == 123:
-                print("  Retrying ...")
+                logger.info("Retrying ...")
             elif result == -9 or result == 255:
                 # This is SIGKILL
                 # We don't need to do anything
                 kill_file.write(f"{cur_test_target} KILLED\n")
-                kill_file.write(TEMP_LOG_PATH.read_text() + "\n")
+                kill_file.write(str(TEST_DIR / "atemp.py") + "\n")
                 kill_file.flush()
-                print(f"KILLED: {cur_test_target}")
+                logger.warning(f"KILLED: {cur_test_target}")
             else:
-                print(result)
+                logger.error(f"Process returned code: {result}")
                 crash_file.write(
                     f"\n{cur_test_target} CRASH with return code {result}\n"
                 )
-                crash_file.write(TEMP_LOG_PATH.read_text() + "\n")
+                try:
+                    crash_file.write(str(TEST_DIR / "atemp.py") + "\n")
+                except FileNotFoundError:
+                    crash_file.write("No temporary log file found\n")
                 crash_file.flush()
-                print(f"ERROR: {cur_test_target}")
+                logger.error(f"ERROR: {cur_test_target}")
             break
         used_time = time.time() - start_time
-        print("Restart at time:", used_time)
+        logger.info(f"Restart at time: {used_time}")
