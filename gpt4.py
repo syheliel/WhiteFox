@@ -8,6 +8,9 @@ import time
 import os
 import json
 from pathlib import Path
+from logger import logger
+import concurrent.futures
+from typing import List, Dict, Any
 
 # You need to create a file named "openai.key" and put your API key in it
 openai.api_key = Path("openai.key").read_text().strip()
@@ -34,6 +37,38 @@ def process_msg(msg):
                 code_st = True
     return code
 
+MAX_TOKENS = 2048
+
+def make_openai_request(system_msg: str, user_input: str, model: str, temperature: float, top_p: float) -> Dict[str, Any]:
+    """Make a single OpenAI API request with retry logic."""
+    max_retries = 3
+    retry_delay = 3
+    
+    for attempt in range(max_retries):
+        try:
+            t_start = time.time()
+            response = openai.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_input},
+                ],
+                max_tokens=MAX_TOKENS,
+                top_p=top_p,
+                temperature=temperature,
+                n=1,  # We'll handle multiple requests in parallel
+                timeout=300,
+            )
+            g_time = time.time() - t_start
+            return {
+                "response": response,
+                "time": g_time
+            }
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise e
+            time.sleep(retry_delay)
+        raise Exception("Failed to make OpenAI request")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -45,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--prompt-only", action="store_true")
     parser.add_argument("--target", type=str, default="PyTorch")
     parser.add_argument("--model", type=str, default="gpt-4")
-
+    parser.add_argument("--max-workers", type=int, default=4, help="Maximum number of parallel workers")
     args = parser.parse_args()
 
     system_message = system_message.format(args.target)
@@ -57,7 +92,7 @@ if __name__ == "__main__":
             continue
         opts[prompt_file.stem] = prompt_file.read_text()
 
-    outdir = args.outdir
+    outdir = Path(args.outdir)
     iteration = args.iter
     top_p = 1.0
     temperature = args.temperature
@@ -73,7 +108,9 @@ if __name__ == "__main__":
         ret["response"] = {}
         os.makedirs(os.path.join(outdir, opt), exist_ok=True)
         user_input = opts[opt]
-        with open(os.path.join(outdir, opt, f"prompt.txt"), "w") as f:
+        prompt_filepath = os.path.join(outdir, opt, f"prompt.txt")
+        logger.info(f"Writing prompt to {prompt_filepath}")
+        with open(prompt_filepath, "w") as f:
             f.write(user_input)
 
         if args.prompt_only:
@@ -81,38 +118,56 @@ if __name__ == "__main__":
             continue
 
         for i in range(iteration):
-            while True:
-                try:
-                    t_start = time.time()
-                    response = openai.ChatCompletion.create(
-                        model=args.model,
-                        messages=[
-                            {"role": "system", "content": system_message},
-                            {"role": "user", "content": user_input},
-                        ],
-                        # max_tokens=256,
-                        max_tokens=512,
-                        top_p=top_p,
-                        temperature=temperature,
-                        n=n_batch_size,
-                        request_timeout=300,
-                    )
-                    g_time = time.time() - t_start
-                    break
-                except Exception as e:
-                    print(e)
-                    time.sleep(10)
-            print(f"[{opt_idx+1}/{len(opts)}] {opt} used time: ", g_time)
-            msgs = [resp.message.content for resp in response["choices"]]
+            # Create a thread pool for parallel requests
+            with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+                # Submit all requests to the thread pool
+                future_to_request = {
+                    executor.submit(
+                        make_openai_request,
+                        system_message,
+                        user_input,
+                        args.model,
+                        temperature,
+                        top_p
+                    ): _ for _ in range(n_batch_size)
+                }
+                
+                # Collect results as they complete
+                msgs = []
+                total_time = 0
+                for future in concurrent.futures.as_completed(future_to_request):
+                    try:
+                        result = future.result()
+                        msgs.append(result["response"].choices[0].message.content)
+                        total_time += result["time"]
+                    except Exception as e:
+                        logger.error(f"Request failed: {str(e)}")
+                        continue
+
+            print(f"[{opt_idx+1}/{len(opts)}] {opt} used time: ", total_time)
+            
             codes = []
             for msg in msgs:
                 code = process_msg(msg)
                 codes.append(code)
                 code_idx += 1
-                with open(os.path.join(outdir, opt, f"{opt}_{code_idx}.py"), "w") as f:
-                    f.write(code)
-                with open(os.path.join(outdir, opt, f"{opt}_{code_idx}.txt"), "w") as f:
-                    f.write(msg)
-            ret["response"][i] = {"raw": response, "code": codes, "g_time": g_time}
-        with open(os.path.join(outdir, "outputs.json"), "a") as f:
+                py_filepath:Path = outdir / opt / f"{opt}_{code_idx}.py"
+                txt_filepath:Path = outdir / opt / f"{opt}_{code_idx}.txt"
+                logger.info(f"Writing generated code to {py_filepath}")
+                with open(py_filepath, "w") as f:
+                    f.write(code if code is not None else "")
+                logger.info(f"Writing raw response to {txt_filepath}")
+                with open(txt_filepath, "w") as f:
+                    f.write(msg if msg is not None else "")
+
+            # Store the results
+            ret["response"][i] = {
+                "raw": [msg for msg in msgs],
+                "code": codes,
+                "g_time": total_time
+            }
+
+        output_json_path = os.path.join(outdir, "outputs.json")
+        logger.info(f"Appending results to {output_json_path}")
+        with open(output_json_path, "a") as f:
             f.write(json.dumps(ret, indent=4) + "\n")

@@ -23,7 +23,7 @@ We provide a list of confirmed bug reports in [bugs](bugs.csv).
 
 ### Prerequisites
 
-1. Python version >= 3.9.0 (It must support f-string.)
+1. Python version >= 3.10.0 (It must support f-string.)
     - highly recommend to use Python 3.9
 2. Check our dependent python libraries in requirements.txt and install with:
     - pip install -r requirements.txt
@@ -39,21 +39,25 @@ The prompts for NL generation are in [Prompts](Prompts) with the format `Prompts
 If you want to generate the prompt by you own, take the prompt for `torch-inductor` as an example:
 
 ```bash
-bash scripts/whitefox-torch-prompt-gen-src2req.sh
-# Or
-bash scripts/whitefox-torch-prompt-gen-src2req.sh {generated-prompt-dir}
+bash scripts/whitefox-torch-prompt-gen-src2req.sh ./prompt-1/
 ```
 The generated prompts will be in `Prompts-generated` by default.
 
 After getting the prompts, you can run the following command to generate the requirements:
 
 ```bash
-python gpt4.py --prompt-dir=Prompts/torch-inductor/src2req \ 
-    --outdir=Requirements/torch-inductor/req \
-    --temperature=0.0 \
-    --batch-size=1
+# python gpt4.py --prompt-dir=Prompts/torch-inductor/src2req \ 
+#    --outdir=./requirements-2/torch-inductor/ \
+#    --temperature=0.0 \
+#    --batch-size=1
 ```
 
+```bash
+python gpt4.py --prompt-dir=prompt-1/torch-inductor/req2nl \
+    --outdir=./requirements-2/torch-inductor/ \
+    --temperature=0.0 \
+    --batch-size=10
+```
 Before running the command, please put your OpenAI API key in `openai.key`:
 
 ```bash
@@ -61,14 +65,10 @@ echo {api_key} > openai.key
 ```
 
 #### Step 2: Test Generation
-
 First, you need to generate the prompts for the test generation based on the requirements:
 
 ```bash
-bash scripts/whitefox-torch-prompt-gen-req2test.sh 
-
-# Or
-bash scripts/whitefox-torch-prompt-gen-req2test.sh {req-dir} {generated-prompt-dir}
+bash scripts/whitefox-torch-prompt-gen-req2test.sh ./requirement-2/torch-inductor ./prompt-3
 ```
 The generated prompts will be in `Prompts-generated` by default.
 
@@ -85,7 +85,11 @@ We recoomend to use the local mode to generate the tests, which utilizes [vllm](
 You can execute the following command to generate the tests:
 
 ```bash
-python starcoder_gen.py --hf-home={path-to-huggingface} --hf-cache={path-to-huggingface-cache} --prompt-dir=Prompts/torch-inductor/req2test ----output-dir=starcoder-generated --num=10 
+# python starcoder_gen.py --hf-home={path-to-huggingface} --hf-cache={path-to-huggingface-cache} --prompt-dir=Prompts/torch-inductor/req2test ----output-dir=starcoder-generated --num=10
+```
+
+```bash
+python gpt4_gen.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
 ```
 
 The generated tests will be in `starcoder-generated`.
@@ -112,7 +116,7 @@ cp -r Prompts/torch-inductor/req2test starcoder-prompts/torch-inductor/
 You can execute the following command to execute the tests:
 
 ```bash
-cd torch-exec && python run_torch.py --input-dir=../starcoder-generated/torch-inductor-generated/step1 --res-dir=_results-torch
+python -m torch-exec.run_torch --input-dir=./gencode-4/ --res-dir=result-4
 ```
 
 The output of the execution will be in `torch-exec/_results-torch`.

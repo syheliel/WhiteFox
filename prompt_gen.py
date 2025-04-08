@@ -6,6 +6,7 @@ import numpy as np
 from prompt_template import _trigger_template_no_code, _pattern_template_no_code
 import random
 import os
+from logger import logger
 
 feedback_template = """# Model begins
 {}
@@ -15,12 +16,12 @@ feedback_template = """# Model begins
 """
 
 
-def select_examples(examples, num, use_rl):
+def select_examples(examples:list, num:int, use_rl:bool) -> list[int]:
     length = len(examples)
     if num > length:
         idxs = list(range(length))
     elif not use_rl:
-        idxs = random.sample(range(length), num)
+        idxs = [random.sample(range(length), num)]
     else:
         beta_list = []
         for e in examples:
@@ -28,7 +29,8 @@ def select_examples(examples, num, use_rl):
             beta = e["beta"] if "beta" in e else 1
             beta_list.append(np.random.beta(alpha, beta))
         idxs = np.argsort(beta_list)[-num:].tolist()
-    return idxs
+        assert isinstance(idxs, list)
+    return idxs # type: ignore
 
 
 class Optim:
@@ -36,10 +38,10 @@ class Optim:
         pass
 
     def get_opts(self):
-        return self.opts.keys()
+        return self.opts.keys() # type: ignore
 
     def _target_line(self, opt):
-        return self.opts[opt]["target_line"]
+        return self.opts[opt]["target_line"] # type: ignore
 
     def _opt_name(self, opt):
         return opt
@@ -49,7 +51,9 @@ class Optim:
         for code_path in code_paths:
             if use_mini:
                 code_path = code_path.replace("-full", "-mini")
-            code += open(code_path, "r").read() + "\n"
+            # Use with statement for safer file handling
+            with open(code_path, "r") as f:
+                code += f.read() + "\n"
         return code
 
     def _join(self, fillings):
@@ -75,9 +79,11 @@ class Optim:
         return res
 
     def _get_hint_code(self, hint, use_mini=False):
+        logger.debug(f"Getting hint code for hint type: {hint['type']}")
         code = ""
         fillings = []
         if hint["type"] == "trigger":
+            logger.debug(f"Processing trigger hint with target line: {hint['target_line']}, func: {hint['func']}")
             fillings += [
                 _trigger_template_no_code.format(hint["target_line"], hint["func"])
             ]
@@ -87,22 +93,29 @@ class Optim:
             code += self._src_code(hint["codes"], use_mini)
             code += "\n"
         elif hint["type"] == "nl":
-            raise NotImplementedError
+            logger.debug("Processing nl hint - returning empty code and fillings")
+            # For "nl" type hints, we don't need to include any code
+            # Just return an empty string for code and no fillings
+            return "", []
         elif hint["type"] == "pattern":
+            logger.debug("Processing pattern hint")
             fillings += [_pattern_template_no_code]
             code += f"# Code of the pattern:\n"
             code += self._src_code(hint["codes"])
             code += "\n"
         else:
-            raise NotImplementedError
+            logger.error(f"Unknown hint type: {hint['type']}")
+            fillings += "unknown hint type"
+        logger.debug(f"Generated code length: {len(code)}, number of fillings: {len(fillings)}")
         return code, fillings
 
     def _indent(self, code):
         return "\n".join(["    " + line for line in code.splitlines()])
 
-    def _load_nl(self, nl_path, idx):
-        nls = {}
-        for opt_dir in Path(nl_path).iterdir():
+    def _load_nl(self, nl_path:Path, idx:int) -> dict[str, str]:
+        nls: dict[str, str] = {}
+        logger.info(f"total {len(list(nl_path.iterdir()))} NL files")
+        for opt_dir in nl_path.iterdir():
             if not opt_dir.is_dir():
                 continue
             try:
@@ -118,10 +131,12 @@ class Optim:
 
 
 class NL(Optim):
-    def __init__(self, opt_path, file_path, idx=1):
+    def __init__(self, opt_path:Path, file_path:Path, idx=1):
         super().__init__()
         opts = json.loads(open(opt_path, "r").read())
+        logger.info(f"opts_path: {opt_path}")
         nl = self._load_nl(file_path, idx)
+        logger.info(f"nl loaded from file: {file_path}, total {len(nl)} NL" )
         self.opts = {}
         for k in opts:
             if k in nl:
@@ -460,9 +475,13 @@ class SrcNL2TestFeedbackTFLite(SrcNL2TestTFLite):
         # If no examples? better use the 1shot one
         # if self.exampels[opt] == []:
         #     return None
+        # Check if examples exist before accessing
+        if not self.examples or opt not in self.examples:
+            return None
+
+        opt_examples = self.examples[opt] # type: ignore
         # If not enough examples, simple
-        opt_examples = self.examples[opt]
-        if len(self.examples[opt]) <= self.k_shot:
+        if len(opt_examples) <= self.k_shot: # Error was here: self.examples could be None
             return "\n\n".join(
                 [
                     self.EXAMPLE_TEMPLATE.replace("PLACEHOLDER_MODEL", code)
@@ -626,7 +645,6 @@ if __name__ == "__main__":
     parser.add_argument("--step1dir", type=str, default="prompt/demo/step1")
     parser.add_argument("--num_model", type=int, default=2)
     parser.add_argument("--use_rl", action="store_true", default=False)
-
     args = parser.parse_args()
 
     outdir = Path(args.outdir)
@@ -716,7 +734,7 @@ if __name__ == "__main__":
                 with open(outdir / f"{opt}_{i}.txt", "w") as f:
                     f.write(prompt)
     elif args.mode == "nl2test":
-        optim = NL(args.optpath, args.nlpath, args.nlidx)
+        optim = NL(Path(args.optpath), Path(args.nlpath), args.nlidx)
         for opt in optim.get_opts():
             prompt = optim.get_prompt(template, opt)
             with open(outdir / f"{opt}.txt", "w") as f:
