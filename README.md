@@ -41,12 +41,12 @@ If you want to generate the prompt by you own, take the prompt for `torch-induct
 ```bash
 bash scripts/whitefox-torch-prompt-gen-src2req.sh ./prompt-1/
 ```
-The generated prompts will be in `Prompts-generated` by default.
+the generated prompts will be in `prompts-generated` by default.
 
-After getting the prompts, you can run the following command to generate the requirements:
+after getting the prompts, you can run the following command to generate the requirements:
 
 ```bash
-# python gpt4.py --prompt-dir=Prompts/torch-inductor/src2req \ 
+# python gpt4.py --prompt-dir=prompts/torch-inductor/src2req \ 
 #    --outdir=./requirements-2/torch-inductor/ \
 #    --temperature=0.0 \
 #    --batch-size=1
@@ -54,69 +54,81 @@ After getting the prompts, you can run the following command to generate the req
 
 ```bash
 python gpt4.py --prompt-dir=prompt-1/torch-inductor/req2nl \
-    --outdir=./requirements-2/torch-inductor/ \
+    --outdir=./requirement-2/torch-inductor/ \
     --temperature=0.0 \
     --batch-size=10
 ```
-Before running the command, please put your OpenAI API key in `openai.key`:
+before running the command, please put your openai api key in `openai.key`:
 
 ```bash
 echo {api_key} > openai.key
 ```
 
-#### Step 2: Test Generation
-First, you need to generate the prompts for the test generation based on the requirements:
+#### step 2: test generation
+first, you need to generate the prompts for the test generation based on the requirements:
 
 ```bash
 bash scripts/whitefox-torch-prompt-gen-req2test.sh ./requirement-2/torch-inductor ./prompt-3
 ```
-The generated prompts will be in `Prompts-generated` by default.
+the generated prompts will be in `prompts-generated` by default.
 
 
-Or you can use the prompts we generated in [Prompts](Prompts) with the format `Prompts/{compiler}/req2test/{name}.txt`.
+or you can use the prompts we generated in [prompts](prompts) with the format `prompts/{compiler}/req2test/{name}.txt`.
 
-We leverage [StarCoder](https://huggingface.co/bigcode/starcoder) to generate the tests based on the prompts.
+we leverage [starcoder](https://huggingface.co/bigcode/starcoder) to generate the tests based on the prompts.
 
 
-##### [Option 1]: Local Mode (Recommended!)
+##### [option 1]: local mode (recommended!)
 
-We recoomend to use the local mode to generate the tests, which utilizes [vllm](https://github.com/vllm-project/vllm).
+we recoomend to use the local mode to generate the tests, which utilizes [vllm](https://github.com/vllm-project/vllm).
 
-You can execute the following command to generate the tests:
+you can execute the following command to generate the tests:
 
 ```bash
-# python starcoder_gen.py --hf-home={path-to-huggingface} --hf-cache={path-to-huggingface-cache} --prompt-dir=Prompts/torch-inductor/req2test ----output-dir=starcoder-generated --num=10
+# python starcoder_gen.py --hf-home={path-to-huggingface} --hf-cache={path-to-huggingface-cache} --prompt-dir=prompts/torch-inductor/req2test ----output-dir=starcoder-generated --num=10
 ```
 
 ```bash
 python gpt4_gen.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
 ```
 
-The generated tests will be in `starcoder-generated`.
+the generated tests will be in `starcoder-generated`.
 
-##### [Option 2]: Server Mode
+##### [option 2]: server mode
 
-You can execute the following command to generate the tests:
+you can execute the following command to generate the tests:
 
-1. Run the starcoder server:
+1. run the starcoder server:
 
 ```bash
 python starcoder_service.py --hf-home={path-to-huggingface} --hf-cache={path-to-huggingface-cache} --prompt-dir=starcoder-prompts --outdir=starcoder-generated --device='cuda:0' --num=10 --batch_size=10
 ```
 
-2. Put the prompts in `starcoder-prompts` and the generated tests will be in `starcoder-generated`.
+2. put the prompts in `starcoder-prompts` and the generated tests will be in `starcoder-generated`.
 
 ```bash
 mkdir starcoder-prompts/torch-inductor
-cp -r Prompts/torch-inductor/req2test starcoder-prompts/torch-inductor/
+cp -r prompts/torch-inductor/req2test starcoder-prompts/torch-inductor/
 ```
 
-#### Step 3: Test Execution
+#### step 3: test execution
 
-You can execute the following command to execute the tests:
+you can execute the following command to execute the tests:
 
 ```bash
 python -m torch-exec.run_torch --input-dir=./gencode-4/ --res-dir=result-4
 ```
 
 The output of the execution will be in `torch-exec/_results-torch`.
+
+# TLDR
+```bash
+bash scripts/whitefox-torch-prompt-gen-src2req.sh ./prompt-1/
+python gpt4.py --prompt-dir=prompt-1/torch-inductor \
+    --outdir=./requirement-2/torch-inductor/ \
+    --temperature=0.0 \
+    --batch-size=10
+bash scripts/whitefox-torch-prompt-gen-req2test.sh ./requirement-2/torch-inductor ./prompt-3
+python gpt4_gen.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
+python -m torch-exec.run_torch --input-dir=./gencode-4/ --res-dir=result-4
+```

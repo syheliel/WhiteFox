@@ -3,11 +3,12 @@ import astunparse
 import json
 import os
 from pathlib import Path
-from typing import List, Optional, Any, Callable
+from typing import List, Optional, Any, Callable, NamedTuple
 import ast
 import traceback
 import torch
 from torch_utils import test_wrapper
+from loguru import logger
 
 from constant.returntypes import ResType
 
@@ -265,7 +266,10 @@ def _cross_check(func_def_code, tensors, filename):
     if COV:
         clean_match_cov()
 
-    result, errors = eval(f"TEST_WRAPPER(func_def_code, 420, tensors, '{DEVICE}')")
+    if TEST_WRAPPER is None:
+        raise ValueError("TEST_WRAPPER is not initialized")
+    
+    result, errors = TEST_WRAPPER(func_def_code, 420, tensors, DEVICE)
 
     if COV:
         match_info = {filename: get_match_cov()}
@@ -310,13 +314,16 @@ def _cross_check(func_def_code, tensors, filename):
         raise Exception(exception_name, "Catch")
 
 
-def validate(func_def_code, tensors, filename):
+def validate(func_def_code:str, tensors:List[str], filename:str):
+    logger.info(f"validating {filename}")
     func_def_code += f"test_inputs = [{', '.join(tensors)}]\n"
     TEMP_LOG_PATH.write_text(func_def_code)
 
-    result, errors = eval(
-        f"TEST_WRAPPER(func_def_code, 420, tensors, '{DEVICE}', 'validate')"
-    )
+    if TEST_WRAPPER is None:
+        raise ValueError("TEST_WRAPPER is not initialized")
+    
+    result, errors = TEST_WRAPPER(func_def_code, 420, tensors, DEVICE, 'validate')
+    
     if result == ResType.PASS:
         with open(TEST_DIR / "success.log", "a") as fw:
             fw.write(filename + "\n")
@@ -324,8 +331,26 @@ def validate(func_def_code, tensors, filename):
         with open(TEST_DIR / "fail.log", "a") as fw:
             fw.write(filename + "\n")
 
+class Task(NamedTuple):
+    opt: str
+    label: str
+    code: str
 
-def read_all_tasks():
+def read_all_tasks() -> List[Task]:
+    """
+    Reads all task files from the output directory structure.
+    
+    This function scans the OUT_DIR directory for subdirectories, each representing an optimization option.
+    Within each subdirectory, it finds Python files (.py) and reads their contents.
+    
+    Returns:
+        list: A sorted list of tasks, where each task is a list containing:
+            - opt (str): The optimization option directory name
+            - label (str): The filename without the .py extension
+            - code (str): The contents of the Python file
+            
+    The returned list is sorted first by optimization option and then by label.
+    """
     tasks = []
     for opt_dir in OUT_DIR.iterdir():
         if not opt_dir.is_dir():
@@ -340,11 +365,15 @@ def read_all_tasks():
             tasks.append([opt, label, code])
 
     tasks = sorted(tasks, key=lambda x: (x[0], x[1]))
-    return tasks
+    return [Task(opt, label, code) for opt, label, code in tasks]
 
 
-def core_oracle(code, filename, is_validate=False):
+def core_oracle(code:str, filename:str, is_validate:bool=False):
+    logger.info(f"testing {filename}")
     class_def_code, inputs, input_init_code = CODE_PARSER.split_func_tensor(code)
+    logger.info(f"the length of class_def_code: {len(class_def_code)}")
+    logger.info(f"the length of inputs: {len(inputs)}")
+    logger.info(f"the length of input_init_code: {len(input_init_code)}")
     imports = CODE_PARSER.imports
 
     if len(inputs) == 0:
@@ -360,11 +389,11 @@ def core_oracle(code, filename, is_validate=False):
 
 
 def core_loop(args):
-    tasks = read_all_tasks()
-    try:
+    tasks:List[Task] = read_all_tasks()
+    logger.info(f"Total tasks: {len(tasks)}")
+    tested = set([])
+    if TEST_LOG_PATH.exists():
         tested = set(open(TEST_LOG_PATH, "r").read().splitlines())
-    except Exception:
-        tested = set([])
 
     count = 0
     for id in range(len(tasks)):
@@ -373,6 +402,7 @@ def core_loop(args):
         filename = label + ".py"
 
         if filename in tested:
+            logger.info(f"Skipping {filename} because it has already been tested")
             continue
         with open(TEST_LOG_PATH, "a") as fw:
             fw.write(filename + "\n")
@@ -389,8 +419,8 @@ def core_loop(args):
             if (
                 reason == "FrameworkCrashCatch"
             ):  # FrameworkCrashCatch is printed by driver
-                print(traceback.format_exc())
-                print(detail)
+                logger.error(traceback.format_exc())
+                logger.error(detail)
                 exit(-1)
 
             if "Catch" in reason:
@@ -400,8 +430,8 @@ def core_loop(args):
                             id, api, label, reason, SEED, detail
                         )
                     )
-            print("\nLmfuzzTestcase", id, api, label, reason, SEED, detail)
-            print("----------------------------------\n")
+            logger.info("\nLmfuzzTestcase id:{} api:{} label:{} reason:{} seed:{} detail:{}".format(id, api, label, reason, SEED, detail))
+            logger.info("----------------------------------\n")
 
         count += 1
         if count >= MAXIMUM_TESTCASES:
@@ -427,6 +457,12 @@ def main(lib, out_dir, res_dir, test_dir , cov, validate, device):
     CRASH_LOG_PATH = TEST_DIR / "crash.log"
     DEVICE = device
     COV = cov
+    logger.info(f"OUT_DIR: {OUT_DIR}")
+    logger.info(f"RESULT_DIR: {RESULT_DIR}")
+    logger.info(f"TEST_DIR: {TEST_DIR}")
+    logger.info(f"TEST_LOG_PATH: {TEST_LOG_PATH}")
+    logger.info(f"TEMP_LOG_PATH: {TEMP_LOG_PATH}")
+    logger.info(f"CRASH_LOG_PATH: {CRASH_LOG_PATH}")
 
     # Ensure directories exist
     RESULT_DIR.mkdir(parents=True, exist_ok=True)

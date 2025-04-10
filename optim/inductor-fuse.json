@@ -1,0 +1,74 @@
+{
+	"PostGradBatchLinearFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "PostGradBatchLinearFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/PostGradBatchLinearFusion.py"
+				]
+			}
+		]
+	},
+	"PreGradBatchLinearFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "PreGradBatchLinearFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/PreGradBatchLinearFusion.py"
+				]
+			}
+		]
+	},
+	"BatchPointwiseOpsPostGradFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "BatchPointwiseOpsPostGradFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/BatchPointwiseOpsPostGradFusion.py"
+				]
+			}
+		]
+	},
+	"BatchPointwiseOpsPreGradFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "BatchPointwiseOpsPreGradFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/BatchPointwiseOpsPreGradFusion.py"
+				]
+			}
+		]
+	},
+	"BatchLinearLHSFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "BatchLinearLHSFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/BatchLinearLHSFusion.py"
+				]
+			}
+		]
+	},
+	"GroupLinearFusion": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "module.graph.erase_node(node)",
+				"func": "GroupLinearFusion",
+				"codes": [
+					"source-code-data/pytorch/inductor-group-batch/GroupLinearFusion.py"
+				]
+			}
+		]
+	}
+}

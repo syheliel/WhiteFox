@@ -104,7 +104,7 @@ class Optim:
             code += self._src_code(hint["codes"])
             code += "\n"
         else:
-            logger.error(f"Unknown hint type: {hint['type']}")
+            logger.warning(f"Unknown hint type: {hint['type']}")
             fillings += "unknown hint type"
         logger.debug(f"Generated code length: {len(code)}, number of fillings: {len(fillings)}")
         return code, fillings
@@ -672,6 +672,7 @@ if __name__ == "__main__":
         else:
             optim = Src2Test(args.optpath)
         for opt in optim.get_opts():
+            logger.info(f"Generating prompt for {opt}")
             prompt = optim.get_prompt(template, opt, args.mini)
             with open(outdir / f"{opt}.txt", "w") as f:
                 f.write(prompt)

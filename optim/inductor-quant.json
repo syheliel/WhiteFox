@@ -1,0 +1,57 @@
+{
+    "QConvLowering": {
+        "hints": [
+            {
+                "type": "pattern",
+                "func": "qconv",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/quantization.py"
+                ]
+            }
+        ]
+    },
+    "QLinearLowering": {
+        "hints": [
+            {
+                "type": "pattern",
+                "func": "qlinear",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/quantization.py"
+                ]
+            }
+        ]
+    },
+    "QLinearBinaryLowering": {
+        "hints": [
+            {
+                "type": "pattern",
+                "func": "qlinear_binary",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/quantization.py"
+                ]
+            }
+        ]
+    },
+    "DequantPromotion": {
+        "hints": [
+            {
+                "type": "pattern",
+                "func": "dequant_promotion",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/quantization.py"
+                ]
+            }
+        ]
+    },
+    "QConvWeightPrepack": {
+        "hints": [
+            {
+                "type": "pattern",
+                "func": "qconv_weight_prepack",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/quantization.py"
+                ]
+            }
+        ]
+    }
+}

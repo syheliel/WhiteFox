@@ -1,0 +1,272 @@
+{
+    "normalize_split_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "remove_split_with_size_one": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_unbind_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_cat_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_stack_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_squeeze_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_reshape_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_clamp_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_detach_default": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_splits": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_split_squeeze": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_unbind_stack": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "simplify_split_cat": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_getitem_cat": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "mutate_cat_node": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_split_default_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_split_with_size_default_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_split_cat_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_select_cat_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "normalize_cat_default_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "merge_unbind_stack_aten": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "split_cat_to_slices": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "unbind_cat_to_view": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "split_stack_to_cats": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "unbind_stack_to_slices": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "move_reshape_out_of_split_stack": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    },
+    "move_view_after_cat": {
+        "hints": [
+            {
+                "type": "pattern",
+                "codes": [
+                    "source-code-data/pytorch/_inductor/fx_passes/split_cat.py"
+                ]
+            }
+        ]
+    }
+}

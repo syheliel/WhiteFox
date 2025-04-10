@@ -1,4 +1,5 @@
 import torch
+from loguru import logger
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -205,7 +206,7 @@ def set_state():
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def test_wrapper(func_def_code, rand_seed, grad_tensors, device, test_fn="test_jit_oracle", test_ad=False):
+def test_wrapper(func_def_code:str, rand_seed:int, grad_tensors:list[str], device:str, test_fn:str="test_jit_oracle", test_ad:bool=False) -> tuple[ResType, dict[str, str]]:
     errors = {}
     if len(grad_tensors):
         set_seed(rand_seed)

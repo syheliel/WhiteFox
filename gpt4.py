@@ -87,6 +87,7 @@ if __name__ == "__main__":
 
     prompt_dir = Path(args.prompt_dir)
     opts = {}
+    logger.info(f"prompt dir: {prompt_dir}")
     for prompt_file in prompt_dir.iterdir():
         if not prompt_file.is_file():
             continue

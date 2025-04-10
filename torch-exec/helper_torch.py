@@ -4,14 +4,12 @@ from gradcheck import (
     get_numerical_jacobian,
     _as_tuple,
     _differentiable_outputs,
-    get_jacobians,
 )
-import random
 from torch.overrides import is_tensor_like
 from torch.autograd import forward_ad as fwad
 from torch.autograd.functional import jacobian
-from torch.func import jacfwd, jacrev
-
+from torch._functorch.eager_transforms import jacfwd, jacrev
+from loguru import logger
 from classes.torch_library import TorchLibrary
 
 NEIGHBOR_NUM = 5
@@ -591,7 +589,10 @@ def Script(fn):
     return torch.jit.script(fn)
 
 def Inductor(fn):
-    return torch.compile(fn)
+    import intel_extension_for_pytorch
+    backend = "ipex"
+    logger.info(f"Compiling with inductor with backend {backend}")
+    return torch.compile(fn, backend=backend)
 
 def DirectJitInv(fn, inputs, device="cpu", mode="trace"):
     value = None
@@ -600,7 +601,7 @@ def DirectJitInv(fn, inputs, device="cpu", mode="trace"):
     new_inputs = CopyInputs(inputs, device=device)
     try:
         if mode == "inductor":
-            jit_fn = torch.compile(fn)
+            jit_fn = Inductor(fn)
         elif mode == "trace":
             jit_fn = Trace(fn, new_inputs, device=device)
         else:
