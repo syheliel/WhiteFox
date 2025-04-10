@@ -2,18 +2,39 @@
 You will need to use your own OpenAI API key to run this script.
 """
 
-import argparse
 import openai
 import time
 import os
 import json
 from pathlib import Path
 from logger import logger
+import tqdm
+import click
 import concurrent.futures
 from typing import List, Dict, Any
+ALL_MODEL: List[str] = [
+    "gpt-4",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "deepseek-chat",
+    "deepseek-coder",
+    "deepseek-reasoner",
+    "deepseek-v3-250324" # 火山引擎
+]
+def get_openai(model:str) -> openai.OpenAI:
+    if model not in ALL_MODEL:
+        raise ValueError(f"Model {model} is not supported")
+    if model in ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]:
+        api_key = Path("deepseek.key").read_text().strip()
+        base_url = "https://api.deepseek.com/v1"
+    elif model in ["deepseek-v3-250324"]:
+        api_key = Path("ark.key").read_text().strip()
+        base_url = "https://ark.cn-beijing.volces.com/api/v3"
+    else:
+        api_key = Path("openai.key").read_text().strip()
+        base_url = "https://api.openai.com/v1"
+    return openai.OpenAI(api_key=api_key, base_url=base_url)
 
-# You need to create a file named "openai.key" and put your API key in it
-openai.api_key = Path("openai.key").read_text().strip()
 system_message = "You are a source code analyzer for {}."
 
 
@@ -37,55 +58,59 @@ def process_msg(msg):
                 code_st = True
     return code
 
-MAX_TOKENS = 2048
-
-def make_openai_request(system_msg: str, user_input: str, model: str, temperature: float, top_p: float) -> Dict[str, Any]:
+def make_LLM_req(client: openai.OpenAI, system_msg: str, user_input: str, model: str, temperature: float, top_p: float, max_tokens: int) -> Dict[str, Any]:
     """Make a single OpenAI API request with retry logic."""
     max_retries = 3
     retry_delay = 3
     
+    logger.info(f"Making LLM request to {model} with temperature={temperature}, top_p={top_p}, max_tokens={max_tokens}")
+    
     for attempt in range(max_retries):
         try:
             t_start = time.time()
-            response = openai.chat.completions.create(
+            logger.debug(f"Attempt {attempt+1}/{max_retries} for LLM request")
+            response = client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_input},
                 ],
-                max_tokens=MAX_TOKENS,
+                max_tokens=max_tokens,
                 top_p=top_p,
                 temperature=temperature,
                 n=1,  # We'll handle multiple requests in parallel
                 timeout=300,
             )
             g_time = time.time() - t_start
+            logger.info(f"LLM request successful. Response time: {g_time:.2f}s")
             return {
                 "response": response,
                 "time": g_time
             }
         except Exception as e:
+            logger.error(f"LLM request failed on attempt {attempt+1}/{max_retries}: {str(e)}")
             if attempt == max_retries - 1:
+                logger.error(f"All retry attempts failed for LLM request to {model}")
                 raise e
+            logger.info(f"Retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)
-        raise Exception("Failed to make OpenAI request")
+    raise Exception("Failed to make OpenAI request")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--prompt-dir", type=str, default="prompt/demo")
-    parser.add_argument("--outdir", type=str, default="chatgpt/zero-shot")
-    parser.add_argument("--iter", type=int, default=1)
-    parser.add_argument("--temperature", type=float, default=1.0)
-    parser.add_argument("--batch-size", type=int, default=100)
-    parser.add_argument("--prompt-only", action="store_true")
-    parser.add_argument("--target", type=str, default="PyTorch")
-    parser.add_argument("--model", type=str, default="gpt-4")
-    parser.add_argument("--max-workers", type=int, default=4, help="Maximum number of parallel workers")
-    args = parser.parse_args()
+@click.command()
+@click.option('--prompt-dir', type=str, default="prompt/demo", help="Directory containing prompt files")
+@click.option('--outdir', type=str, default="chatgpt/zero-shot", help="Output directory for results")
+@click.option('--iter', type=int, default=1, help="Number of iterations to run")
+@click.option('--temperature', type=float, default=1.0, help="Temperature for LLM generation")
+@click.option('--target', type=str, default="PyTorch", help="Target framework for code analysis")
+@click.option('--model', type=str, default="gpt-4", help="LLM model to use")
+@click.option('--batch-size', type=int, default=1, help="Batch size for parallel processing")
+@click.option('--max-workers', type=int, default=4, help="Maximum number of parallel workers")
+@click.option('--max-tokens', type=int, default=2048, help="Maximum number of tokens for LLM generation")
+def main(prompt_dir, outdir, iter, temperature, target, model, batch_size, max_workers, max_tokens):
+    """Process prompts using OpenAI's API and generate code."""
+    system_msg = system_message.format(target)
 
-    system_message = system_message.format(args.target)
-
-    prompt_dir = Path(args.prompt_dir)
+    prompt_dir = Path(prompt_dir)
     opts = {}
     logger.info(f"prompt dir: {prompt_dir}")
     for prompt_file in prompt_dir.iterdir():
@@ -93,15 +118,13 @@ if __name__ == "__main__":
             continue
         opts[prompt_file.stem] = prompt_file.read_text()
 
-    outdir = Path(args.outdir)
-    iteration = args.iter
+    outdir = Path(outdir)
+    iteration = iter
     top_p = 1.0
-    temperature = args.temperature
-    n_batch_size = args.batch_size
 
-    for opt_idx, opt in enumerate(opts):
+    for opt_idx, opt in tqdm.tqdm(enumerate(opts)):
         if os.path.exists(os.path.join(outdir, opt, f"{opt}_1.py")):
-            print("Skipping opt ", opt)
+            logger.info(f"Skipping opt {opt}")
             continue
 
         code_idx = 0
@@ -110,33 +133,33 @@ if __name__ == "__main__":
         os.makedirs(os.path.join(outdir, opt), exist_ok=True)
         user_input = opts[opt]
         prompt_filepath = os.path.join(outdir, opt, f"prompt.txt")
-        logger.info(f"Writing prompt to {prompt_filepath}")
+        logger.info(f"the output will be saved in {prompt_filepath}")
         with open(prompt_filepath, "w") as f:
             f.write(user_input)
 
-        if args.prompt_only:
-            print(opt_idx)
-            continue
+
 
         for i in range(iteration):
-            # Create a thread pool for parallel requests
-            with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as executor:
-                # Submit all requests to the thread pool
-                future_to_request = {
-                    executor.submit(
-                        make_openai_request,
-                        system_message,
-                        user_input,
-                        args.model,
+            logger.info(f"Running {opt} for the {i+1}th time")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_request = {executor.submit(
+                    make_LLM_req,
+                    get_openai(model),
+                    system_msg,
+                    user_input,
+                    model,
                         temperature,
-                        top_p
-                    ): _ for _ in range(n_batch_size)
+                        top_p,
+                        max_tokens
+                    )
+                    for _ in range(batch_size)
                 }
                 
-                # Collect results as they complete
                 msgs = []
                 total_time = 0
-                for future in concurrent.futures.as_completed(future_to_request):
+                for future in tqdm.tqdm(concurrent.futures.as_completed(future_to_request), 
+                                      total=batch_size,
+                                      desc=f"Processing batch {i+1}/{iteration}"):
                     try:
                         result = future.result()
                         msgs.append(result["response"].choices[0].message.content)
@@ -145,7 +168,7 @@ if __name__ == "__main__":
                         logger.error(f"Request failed: {str(e)}")
                         continue
 
-            print(f"[{opt_idx+1}/{len(opts)}] {opt} used time: ", total_time)
+            logger.info(f"[{opt_idx+1}/{len(opts)}] {opt} used time: ", total_time)
             
             codes = []
             for msg in msgs:
@@ -172,3 +195,6 @@ if __name__ == "__main__":
         logger.info(f"Appending results to {output_json_path}")
         with open(output_json_path, "a") as f:
             f.write(json.dumps(ret, indent=4) + "\n")
+
+if __name__ == "__main__":
+    main()
