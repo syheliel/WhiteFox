@@ -12,31 +12,8 @@ import tqdm
 import click
 import concurrent.futures
 from typing import List, Dict, Any
-ALL_MODEL: List[str] = [
-    "gpt-4",
-    "gpt-4o",
-    "gpt-4o-mini",
-    "deepseek-chat",
-    "deepseek-coder",
-    "deepseek-reasoner",
-    "deepseek-v3-250324" # 火山引擎
-]
-def get_openai(model:str) -> openai.OpenAI:
-    if model not in ALL_MODEL:
-        raise ValueError(f"Model {model} is not supported")
-    if model in ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]:
-        api_key = Path("deepseek.key").read_text().strip()
-        base_url = "https://api.deepseek.com/v1"
-    elif model in ["deepseek-v3-250324"]:
-        api_key = Path("ark.key").read_text().strip()
-        base_url = "https://ark.cn-beijing.volces.com/api/v3"
-    else:
-        api_key = Path("openai.key").read_text().strip()
-        base_url = "https://api.openai.com/v1"
-    return openai.OpenAI(api_key=api_key, base_url=base_url)
-
+from llm_client import get_openai,ALL_MODEL
 system_message = "You are a source code analyzer for {}."
-
 
 def process_msg(msg):
     """Extract code blocks."""

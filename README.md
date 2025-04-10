@@ -129,6 +129,6 @@ python gpt4.py --prompt-dir=prompt-1/torch-inductor \
     --temperature=0.0 \
     --batch-size=10
 bash scripts/whitefox-torch-prompt-gen-req2test.sh ./requirement-2/torch-inductor ./prompt-3
-python gpt4_gen.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
+python gpt4_gencode.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
 python -m torch-exec.run_torch --input-dir=./gencode-4/ --res-dir=result-4
 ```
