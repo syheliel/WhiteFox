@@ -49,11 +49,12 @@ output = model(input_tensor)
 @click.option("--model", type=click.Choice(ALL_MODEL), default="qwen/qwen-2.5-coder-32b-instruct", help="Model to use for generate prompt")
 @click.option("--gen-num", type=int, default=5, help="Number of test to generate")
 @click.option("--temperature", type=float, default=0.2, help="Temperature for the model")
-def main(input_dir: str, output_dir: str, model: str, gen_num: int, temperature: float):
+@click.option("--use-vllm", is_flag=True, default=False,help="whether to use the local vllm server")
+def main(input_dir: str, output_dir: str, model: str, gen_num: int, temperature: float, use_vllm: bool):
     input_p:Path = Path(input_dir)
     output_p:Path = Path(output_dir)
     output_p.mkdir(parents=True, exist_ok=True)
-    client = get_openai(model)
+    client = get_openai(model,  use_vllm)
     all_specs = list(input_p.glob("*.json"))
     logger.info(f"Generating {gen_num} tests for {len(all_specs)} specs")
     for spec_p in tqdm.tqdm(all_specs):
