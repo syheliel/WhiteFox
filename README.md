@@ -132,3 +132,105 @@ bash scripts/whitefox-torch-prompt-gen-req2test.sh ./requirement-2/torch-inducto
 python gpt4_gencode.py --prompt-dir=prompt-3/torch-inductor --output-dir=gencode-4 --num=10
 python -m torch-exec.run_torch --input-dir=./gencode-4/ --res-dir=result-4
 ```
+
+# Tree to YAML Converter
+
+This script converts the output of the `tree` command into YAML format, which can be useful for configuration files, documentation, or data processing.
+
+## Prerequisites
+
+- Python 3.6 or higher
+- The `tree` command installed on your system
+- PyYAML package
+- Click package
+
+## Installation
+
+1. Make sure you have the `tree` command installed:
+   - On Ubuntu/Debian: `sudo apt-get install tree`
+   - On macOS: `brew install tree`
+   - On Windows with WSL: `sudo apt-get install tree`
+
+2. Install the required Python packages:
+   ```
+   pip install pyyaml click
+   ```
+
+3. Make the script executable (on Unix-like systems):
+   ```
+   chmod +x get_optinfo.py
+   ```
+
+## Usage
+
+### Basic Usage
+
+To convert the directory structure of the current directory to YAML:
+
+```
+python get_optinfo.py
+```
+
+### Specify a Directory
+
+To convert the directory structure of a specific directory:
+
+```
+python get_optinfo.py /path/to/directory
+```
+
+### Save to File
+
+To save the YAML output to a file:
+
+```
+python get_optinfo.py -o output.yaml
+```
+
+Or with a specific directory:
+
+```
+python get_optinfo.py /path/to/directory -o output.yaml
+```
+
+### Get Help
+
+To see all available options and help:
+
+```
+python get_optinfo.py --help
+```
+
+## Example
+
+If you have a directory structure like:
+
+```
+.
+├── docs
+│   ├── api.md
+│   └── usage.md
+├── src
+│   ├── main.py
+│   └── utils.py
+└── README.md
+```
+
+The script will generate YAML like:
+
+```yaml
+docs:
+  api.md: null
+  usage.md: null
+src:
+  main.py: null
+  utils.py: null
+README.md: null
+```
+
+## Notes
+
+- The script uses `null` to represent files (leaf nodes) in the YAML output
+- Directories are represented as nested dictionaries
+- The script handles Unicode characters in filenames
+- The script uses Click for a more user-friendly command-line interface
