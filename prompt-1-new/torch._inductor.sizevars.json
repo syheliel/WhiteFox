@@ -1,0 +1,73 @@
+
+{
+	"evaluate_expr": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return bool(expr)",
+				"func": "evaluate_expr",
+				"comment": "Direct boolean conversion of sympy expressions may lose precision"
+			}
+		]
+	},
+	"SizeVarAllocator._simplify_with_ranges": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "expr = join_dimensions(self.simplify(expr))",
+				"func": "_simplify_with_ranges",
+				"comment": "Potential precision loss in join_dimensions operation"
+			}
+		]
+	},
+	"SizeVarAllocator.size_hint": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return int(out)",
+				"func": "size_hint",
+				"comment": "Forced integer conversion may lose precision for complex expressions"
+			}
+		]
+	},
+	"SizeVarAllocator.evaluate_min": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "lv = self.size_hint(left)",
+				"func": "evaluate_min",
+				"comment": "Relies on size_hint which may lose precision"
+			}
+		]
+	},
+	"SizeVarAllocator.evaluate_max": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "min_val = self.evaluate_min(left, right)",
+				"func": "evaluate_max",
+				"comment": "Relies on evaluate_min which may lose precision"
+			}
+		]
+	},
+	"SizeVarAllocator.evaluate_static_shape": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return int(right)",
+				"func": "evaluate_static_shape",
+				"comment": "Forced integer conversion may lose precision"
+			}
+		]
+	},
+	"join_dimensions": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return expr",
+				"func": "join_dimensions",
+				"comment": "No precision handling for complex dimension joins"
+			}
+		]
+	}
+}

@@ -1,0 +1,79 @@
+
+{
+	"_sfdp_pattern_1": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return _scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, scale=1.0 / inv_scale)",
+				"func": "_sfdp_replacement_1",
+				"note": "Potential precision loss when converting inv_scale to reciprocal"
+			}
+		]
+	},
+	"_sfdp_pattern_2": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return _scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, scale=scale_factor)",
+				"func": "_sfdp_replacement_2",
+				"note": "Direct use of scale_factor without validation may cause precision issues"
+			}
+		]
+	},
+	"_sfdp_pattern_5": {
+		"hints": [
+			{
+				"type": "type_inference",
+				"target_line": "attn_mask=attn_mask.to(dtype=query.dtype)",
+				"func": "_sfdp_replacement_5",
+				"note": "Automatic dtype conversion of attn_mask may not always be desired"
+			}
+		]
+	},
+	"_sfdp_pattern_7": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "div = div.to(torch.float32)",
+				"func": "_sfdp_pattern_7",
+				"note": "Explicit conversion to float32 may cause precision loss"
+			},
+			{
+				"type": "precision",
+				"target_line": "attn_weight = attn_weight.to(torch.float16)",
+				"func": "_sfdp_pattern_7",
+				"note": "Explicit conversion back to float16 may cause precision loss"
+			}
+		]
+	},
+	"_sfdp_pattern_15": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "attn_mask = (attn_mask == 0).view((bs, 1, 1, k_len)).expand_as(scores)",
+				"func": "_sfdp_pattern_15",
+				"note": "No validation of attn_mask shape before expansion"
+			}
+		]
+	},
+	"_sfdp_pattern_18": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "attn_weights = torch.where(causal_mask, attn_weights, causal_mask_value)",
+				"func": "_sfdp_pattern_18",
+				"note": "No validation of causal_mask shape before where operation"
+			}
+		]
+	},
+	"_sfdp_params_check": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not (query.dtype == key.dtype == value.dtype) or not (query.device == key.device == value.device)",
+				"func": "_sfdp_params_check",
+				"note": "Dtype and device checks are performed but error handling could be more informative"
+			}
+		]
+	}
+}

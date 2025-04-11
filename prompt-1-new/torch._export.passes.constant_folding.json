@@ -1,0 +1,43 @@
+
+{
+	"replace_node_with_constant": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "gm.register_buffer(qualname, constant)",
+				"func": "replace_node_with_constant",
+				"reason": "Potential security issue as it allows arbitrary attribute registration without validation"
+			}
+		]
+	},
+	"is_impure": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "node.args[0].meta[\"val\"].dtype == torch.int8",
+				"func": "is_impure",
+				"reason": "Hardcoded dtype check may cause precision issues with other integer types"
+			}
+		]
+	},
+	"run_node": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if any(type(self.unknown_value) == type(input_) and self.unknown_value == input_ for input_ in flattened_inputs)",
+				"func": "run_node",
+				"reason": "Type comparison may fail for certain input types"
+			}
+		]
+	},
+	"constant_fold": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "if constraint_fn is not None and not constraint_fn(node)",
+				"func": "constant_fold",
+				"reason": "Missing proper quantization handling in constraint function"
+			}
+		]
+	}
+}

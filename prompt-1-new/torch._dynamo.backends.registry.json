@@ -1,0 +1,39 @@
+
+{
+	"register_backend": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert name not in _COMPILER_FNS, f\"duplicate name: {name}\"",
+				"func": "register_backend",
+				"note": "Duplicate backend names are not properly handled beyond assertion"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert callable(compiler_fn)",
+				"func": "register_backend",
+				"note": "No proper error handling for non-callable compiler_fn"
+			}
+		]
+	},
+	"lookup_backend": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if compiler_fn not in _BACKENDS:",
+				"func": "lookup_backend",
+				"note": "No validation for malformed backend names"
+			}
+		]
+	},
+	"_discover_entrypoint_backends": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "eps = {name: eps[name] for name in eps.names}",
+				"func": "_discover_entrypoint_backends",
+				"note": "Potential security issue with arbitrary entry point loading"
+			}
+		]
+	}
+}

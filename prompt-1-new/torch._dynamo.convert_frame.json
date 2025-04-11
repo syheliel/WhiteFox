@@ -1,0 +1,55 @@
+
+{
+	"ConvertFrameAssert": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "torch._C._set_cublas_allow_tf32(allow_tf32)",
+				"func": "preserve_global_state",
+				"note": "TF32 precision setting is not properly handled in state preservation"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not has_tensor_in_frame(frame):",
+				"func": "has_tensor_in_frame",
+				"note": "Missing proper argument validation for numpy arrays when config.trace_numpy is True"
+			}
+		]
+	},
+	"compile_inner": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "if config.trace_numpy and np and (istype(obj, np.ndarray) or isinstance(obj, np.generic)):",
+				"func": "has_tensor",
+				"note": "No handling of numpy array quantization when tracing is enabled"
+			}
+		]
+	},
+	"_compile_inner": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "out_code = transform_code_object(code, transform)",
+				"func": "_compile_inner",
+				"note": "Potential code injection vulnerability via code transformation"
+			},
+			{
+				"type": "type_inference",
+				"target_line": "if istype(obj, (list, tuple)):",
+				"func": "has_tensor",
+				"note": "No proper type inference for nested tensor structures"
+			}
+		]
+	},
+	"CatchErrorsWrapper": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if frame.f_code.co_filename == \"<string>\" and frame.f_code.co_name == \"__new__\":",
+				"func": "__call__",
+				"note": "Incomplete argument validation for special cases"
+			}
+		]
+	}
+}

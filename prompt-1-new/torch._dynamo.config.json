@@ -1,0 +1,83 @@
+
+{
+	"optimize_ddp": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "optimize_ddp: Union[bool, Literal[\"ddp_optimizer\", \"python_reducer\", \"python_reducer_without_compiled_forward\", \"no_optimization\"],] = True",
+				"func": "optimize_ddp",
+				"comment": "The optimize_ddp flag accepts multiple types but lacks proper validation for invalid string inputs"
+			}
+		]
+	},
+	"repro_tolerance": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "repro_tolerance = 1e-3",
+				"func": "repro_tolerance",
+				"comment": "Fixed tolerance value may not be suitable for all precision requirements"
+			}
+		]
+	},
+	"numpy_default_float": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "numpy_default_float = \"float64\"",
+				"func": "numpy_default_float",
+				"comment": "Defaulting to float64 may cause unnecessary memory usage for cases where float32 would suffice"
+			}
+		]
+	},
+	"numpy_default_complex": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "numpy_default_complex = \"complex128\"",
+				"func": "numpy_default_complex",
+				"comment": "Defaulting to complex128 may cause unnecessary memory usage for cases where complex64 would suffice"
+			}
+		]
+	},
+	"numpy_default_int": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "numpy_default_int = \"int64\"",
+				"func": "numpy_default_int",
+				"comment": "Defaulting to int64 may cause unnecessary memory usage for cases where smaller integer types would suffice"
+			}
+		]
+	},
+	"skip_nnmodule_hook_guards": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "skip_nnmodule_hook_guards = True",
+				"func": "skip_nnmodule_hook_guards",
+				"comment": "Skipping hook guards could lead to incorrect execution if hooks are added/removed after compilation"
+			}
+		]
+	},
+	"skip_no_tensor_aliasing_guards_on_parameters": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "skip_no_tensor_aliasing_guards_on_parameters = True",
+				"func": "skip_no_tensor_aliasing_guards_on_parameters",
+				"comment": "Skipping tensor aliasing guards could lead to incorrect results if the same parameter is passed as multiple inputs"
+			}
+		]
+	},
+	"fake_tensor_cache_enabled": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "fake_tensor_cache_enabled = (os.environ.get(\"TORCH_FAKE_TENSOR_DISPATCH_CACHE\", \"1\") == \"1\")",
+				"func": "fake_tensor_cache_enabled",
+				"comment": "Caching fake tensor dispatches could lead to incorrect behavior if tensor properties change between calls"
+			}
+		]
+	}
+}

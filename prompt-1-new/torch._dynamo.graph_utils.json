@@ -1,0 +1,35 @@
+
+{
+	"_flatten_args_kwargs": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "flatten((start, stop, step))",
+				"func": "_flatten_args_kwargs",
+				"reason": "Recursive flattening of slice components may lose precision information"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "fully_flattened.append(arg)",
+				"func": "_flatten_args_kwargs",
+				"reason": "No type checking for the appended argument"
+			}
+		]
+	},
+	"_detect_cycles": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "pending.append((child, origin))",
+				"func": "_detect_cycles",
+				"reason": "Potential infinite loop if graph is malformed"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if cur_node in current_path_set:",
+				"func": "_detect_cycles",
+				"reason": "No validation of node types before cycle detection"
+			}
+		]
+	}
+}

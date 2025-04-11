@@ -1,0 +1,45 @@
+
+{
+	"AotAutograd": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "counters[\"aot_autograd\"][\"total\"] += 1",
+				"func": "__call__",
+				"reason": "Potential race condition when incrementing counter in multi-threaded environment"
+			},
+			{
+				"type": "improper_argument_check",
+				"target_line": "if kwargs:",
+				"func": "__call__",
+				"reason": "Warning about ignored kwargs but continuing execution without proper validation"
+			},
+			{
+				"type": "precision_problem",
+				"target_line": "inputs = list(map(defake, inputs))",
+				"func": "wrapper",
+				"reason": "Converting fake tensors to zero tensors may affect numerical precision"
+			}
+		]
+	},
+	"device_from_inputs": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "for x in example_inputs:",
+				"func": "device_from_inputs",
+				"reason": "No handling for case where no inputs have device attribute"
+			}
+		]
+	},
+	"dtype_from_inputs": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "for x in example_inputs:",
+				"func": "dtype_from_inputs",
+				"reason": "No handling for case where no inputs have dtype attribute"
+			}
+		]
+	}
+}

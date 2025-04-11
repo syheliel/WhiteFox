@@ -1,0 +1,69 @@
+
+{
+	"draw_buffers": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "metadata = TensorMetadata(group, dtype, None, None, None, None, None)",
+				"func": "draw_buffers",
+				"note": "Missing metadata for tensor dimensions and strides could lead to precision issues"
+			}
+		]
+	},
+	"create_fx_from_snodes": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if snode.is_extern():",
+				"func": "create_fx_from_snodes",
+				"note": "No validation of snode types before processing"
+			},
+			{
+				"type": "quantization",
+				"target_line": "dtype = node.data.dtype",
+				"func": "create_fx_from_snodes",
+				"note": "No handling of quantized dtypes"
+			}
+		]
+	},
+	"DebugFormatter.fx_graph": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "save_graph_repro(fd, gm, inputs, \"inductor\", save_dir=save_dir, stable_hash=stable_hash)",
+				"func": "fx_graph",
+				"note": "Potential security issue when saving real tensors to disk"
+			}
+		]
+	},
+	"save_args_for_compile_fx_inner": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "with open(path, \"wb\") as f: pickle.dump((args_to_save, kwargs_to_save), f)",
+				"func": "save_args_for_compile_fx_inner",
+				"note": "Potential security issue with pickle serialization"
+			}
+		]
+	},
+	"load_args_and_run_compile_fx_inner": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "with open(path, \"rb\") as f: args, kwargs = pickle.load(f)",
+				"func": "load_args_and_run_compile_fx_inner",
+				"note": "Potential security issue with pickle deserialization"
+			}
+		]
+	},
+	"aot_inductor_minifier_wrapper": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "gm = exported_program.module()",
+				"func": "aot_inductor_minifier_wrapper",
+				"note": "No validation of exported_program input"
+			}
+		]
+	}
+}

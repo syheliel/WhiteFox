@@ -1,0 +1,55 @@
+
+{
+    "OptimizedModule": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "self.forward = self.dynamo_ctx(external_utils.wrap_inline(self._orig_mod))",
+                "func": "OptimizedModule._initialize",
+                "note": "Potential precision loss when wrapping inline functions"
+            },
+            {
+                "type": "argument_check",
+                "target_line": "if isinstance(self.dynamo_ctx, DisableContext):",
+                "func": "OptimizedModule._initialize",
+                "note": "Missing proper argument validation for dynamo_ctx type"
+            }
+        ]
+    },
+    "export": {
+        "hints": [
+            {
+                "type": "vulnerability",
+                "target_line": "opt_f = optimize_assert(dynamo_normalization_capturing_compiler, hooks=Hooks(guard_export_fn=guard_export_print, guard_fail_fn=None), export=True, export_constraints=constraints)(f)",
+                "func": "export.inner",
+                "note": "Potential security vulnerability due to dynamic code execution"
+            },
+            {
+                "type": "quantization",
+                "target_line": "fake_params_buffers[name] = ambient_fake_mode.from_tensor(value, static_shapes=True)",
+                "func": "export.inner.result_capturing_wrapper",
+                "note": "Potential quantization issues with fake tensor conversion"
+            }
+        ]
+    },
+    "optimize_assert": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "backend = get_compiler_fn(backend)",
+                "func": "optimize_assert",
+                "note": "Missing validation for backend function"
+            }
+        ]
+    },
+    "TorchPatcher": {
+        "hints": [
+            {
+                "type": "vulnerability",
+                "target_line": "torch.jit.trace = disable(torch.jit.trace, reason=\"tracing into TorchScript not fully supported\")",
+                "func": "TorchPatcher.patch",
+                "note": "Disabling security features may introduce vulnerabilities"
+            }
+        ]
+    }
+}

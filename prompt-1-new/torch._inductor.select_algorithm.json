@@ -1,0 +1,57 @@
+
+{
+	"TritonTemplateKernel": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "line = f\"tl.load({var} + {index_str})\"",
+				"func": "load_input",
+				"comment": "Potential precision loss when loading values without proper type conversion or masking."
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert len(argnames) == len(named_args)",
+				"func": "def_kernel",
+				"comment": "Insufficient argument validation; missing checks for argument types or compatibility."
+			},
+			{
+				"type": "quantization",
+				"target_line": "if var_dtype in (torch.float16, torch.bfloat16) and config.triton.codegen_upcast_to_fp32:",
+				"func": "load_input",
+				"comment": "Explicit handling of lower precision types but lacks comprehensive quantization support."
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "store = f\"tl.atomic_add({buf_name} + {index_str}, {value}, {self.mask}, sem='relaxed')\"",
+				"func": "modification",
+				"comment": "Potential race condition or memory corruption due to relaxed atomic operations."
+			}
+		]
+	},
+	"AlgorithmSelectorCache": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if len(choices) == 0:",
+				"func": "__call__",
+				"comment": "Lacks early validation for empty choices which could lead to undefined behavior."
+			},
+			{
+				"type": "precision",
+				"target_line": "return rand_strided(size, stride, device=device, dtype=dtype, extra_size=extra_size)",
+				"func": "benchmark_example_value",
+				"comment": "Random tensor generation may not cover edge cases affecting precision."
+			}
+		]
+	},
+	"ExternKernelCaller": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if self.has_out_variant:",
+				"func": "benchmark",
+				"comment": "Missing validation for out variant compatibility with input tensors."
+			}
+		]
+	}
+}

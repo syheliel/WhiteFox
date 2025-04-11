@@ -1,0 +1,79 @@
+
+{
+	"mark_mixed_dtype": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "computation_node.meta[\"_allow_mixed_dtype_folding\"] = computation_node_dtype",
+				"func": "mark_mixed_dtype",
+				"description": "Mixed precision handling may cause precision loss when folding operations"
+			}
+		]
+	},
+	"recover_original_precision_folded_computation_ops": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "new_input = graph.create_node(\"call_function\", prims.convert_element_type.default, (old_input, orig_dtype))",
+				"func": "recover_original_precision_folded_computation_ops",
+				"description": "Precision recovery after folding may not be exact due to type conversion"
+			}
+		]
+	},
+	"_check_conv_and_broadcast_op": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if conv_node.args[1] is not None and conv_node.args[1].op != \"get_attr\"",
+				"func": "_check_conv_and_broadcast_op",
+				"description": "Incomplete argument check for bias node"
+			},
+			{
+				"type": "precision",
+				"target_line": "if torch.promote_types(other_meta_value.dtype, weight_meta_value.dtype) != weight_meta_value.dtype",
+				"func": "_check_conv_and_broadcast_op",
+				"description": "Type promotion may lead to precision loss"
+			}
+		]
+	},
+	"_check_linear_and_broadcast_op": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if bias_node is not None and bias_node.op != \"get_attr\"",
+				"func": "_check_linear_and_broadcast_op",
+				"description": "Incomplete argument check for bias node"
+			},
+			{
+				"type": "precision",
+				"target_line": "if torch.promote_types(other_meta_value.dtype, weight_meta_value.dtype) != weight_meta_value.dtype",
+				"func": "_check_linear_and_broadcast_op",
+				"description": "Type promotion may lead to precision loss"
+			}
+		]
+	},
+	"resize_scalar_or_tensor_to_shape": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "other_tensor = torch.tensor(other, dtype=weight.dtype, device=weight.device)",
+				"func": "resize_scalar_or_tensor_to_shape",
+				"description": "Direct tensor conversion may cause precision issues"
+			}
+		]
+	},
+	"folded_op": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "graph.erase_node(binary_node)",
+				"func": "folded_op"
+			},
+			{
+				"type": "trigger",
+				"target_line": "graph.erase_node(computation_node)",
+				"func": "folded_op"
+			}
+		]
+	}
+}

@@ -1,0 +1,25 @@
+
+{
+	"apply_input_props_using_example": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not len(graph_inputs) == len(example_input):",
+				"func": "apply_input_props_using_example",
+				"comment": "Should use != instead of not =="
+			},
+			{
+				"type": "type_inference",
+				"target_line": "graph_i.setType(TensorType.create_from_tensor(example_i))",
+				"func": "apply_input_props_using_example",
+				"comment": "No type checking for TensorType.create_from_tensor result"
+			},
+			{
+				"type": "precision",
+				"target_line": "if isinstance(example_i, torch.Tensor) != isinstance(graph_i.type(), TensorType)",
+				"func": "apply_input_props_using_example",
+				"comment": "Direct boolean comparison may be problematic for some edge cases"
+			}
+		]
+	}
+}

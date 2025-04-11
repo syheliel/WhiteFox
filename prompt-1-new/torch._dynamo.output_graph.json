@@ -1,0 +1,57 @@
+
+{
+	"OutputGraph": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "correct = self.gm.forward(*clone_inputs(example_inputs))",
+				"func": "compile_and_call_fx_graph",
+				"issue": "Potential precision loss when comparing tensors with 'same' function"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert not (self.pregraph_bytecode and self.export)",
+				"func": "compile_subgraph",
+				"issue": "Missing proper validation of pregraph_bytecode with export mode"
+			},
+			{
+				"type": "quantization",
+				"target_line": "self.tracked_fakes_id_to_source: dict[int, list[Source]]",
+				"func": "__init__",
+				"issue": "Potential quantization issue with tensor ID tracking"
+			}
+		]
+	},
+	"SubgraphTracer": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "self.input_name_to_proxy: dict[str, fx.Proxy]",
+				"func": "__init__",
+				"issue": "Potential security issue with proxy object management"
+			},
+			{
+				"type": "precision",
+				"target_line": "example_value = node.meta['example_value']",
+				"func": "example_value_from_input_node",
+				"issue": "Potential precision loss when extracting example values"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert arg.graph == self.graph",
+				"func": "create_node",
+				"issue": "Insufficient validation of graph argument consistency"
+			}
+		]
+	},
+	"check_pt2_compliant_op": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if config.only_allow_pt2_compliant_ops",
+				"func": "check_pt2_compliant_op",
+				"issue": "Missing proper validation of PT2 compliance configuration"
+			}
+		]
+	}
+}

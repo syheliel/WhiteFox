@@ -1,0 +1,33 @@
+
+{
+	"randperm_index_add_replacement": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "torch.ops.aten._unsafe_index_put(x, (index,), aten._unsafe_index(x, (index,)) + y, accumulate=False)",
+				"func": "randperm_index_add_replacement",
+				"reason": "Using unsafe indexing operations may lead to precision issues or undefined behavior if indices are out of bounds"
+			}
+		]
+	},
+	"randperm_index_replacement": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "torch.ops.aten._unsafe_index(x, (index,))",
+				"func": "randperm_index_replacement",
+				"reason": "Using unsafe indexing operations may lead to precision issues or undefined behavior if indices are out of bounds"
+			}
+		]
+	},
+	"NumpyCompatNormalization": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "for k, v in kwargs.items()",
+				"func": "NumpyCompatNormalization.__call__",
+				"reason": "No validation of kwargs against actual function signatures before replacement"
+			}
+		]
+	}
+}

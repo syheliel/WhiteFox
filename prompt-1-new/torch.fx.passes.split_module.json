@@ -1,0 +1,41 @@
+
+{
+    "split_module": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "new_node.meta = node.meta.copy()",
+                "func": "split_module",
+                "comment": "Copying metadata may lead to precision loss if not handled carefully"
+            },
+            {
+                "type": "argument_check",
+                "target_line": "assert isinstance(node.target, str)",
+                "func": "split_module",
+                "comment": "Missing proper type checking for node.target which could lead to runtime errors"
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "attr_val = _get_attr_from_qualname(m, node.target)",
+                "func": "split_module",
+                "comment": "Potential security vulnerability if node.target is not properly sanitized"
+            },
+            {
+                "type": "quantization",
+                "target_line": "if isinstance(orig_attr, torch.nn.Module):",
+                "func": "split_module",
+                "comment": "No handling of quantized modules which may affect quantization-aware training"
+            }
+        ]
+    },
+    "_get_attr_from_qualname": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if not hasattr(attr_val, atom)",
+                "func": "_get_attr_from_qualname",
+                "comment": "Missing proper error handling for attribute access"
+            }
+        ]
+    }
+}

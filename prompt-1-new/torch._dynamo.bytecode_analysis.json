@@ -1,0 +1,40 @@
+
+{
+	"remove_dead_code": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "assert inst not in indexof",
+				"func": "get_indexof"
+			},
+			{
+				"type": "precision_problem",
+				"target_line": "live_idx = sorted(live_code)",
+				"func": "remove_dead_code"
+			}
+		]
+	},
+	"stacksize_analysis": {
+		"hints": [
+			{
+				"type": "precision_problem",
+				"target_line": "stack_sizes = {inst: StackSize(float(\"inf\"), float(\"-inf\"), fixed_point) for inst in instructions}",
+				"func": "stacksize_analysis"
+			},
+			{
+				"type": "improper_argument_check",
+				"target_line": "assert instructions",
+				"func": "stacksize_analysis"
+			}
+		]
+	},
+	"livevars_analysis": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "raise NotImplementedError(f\"unhandled {inst.opname}\")",
+				"func": "livevars_analysis"
+			}
+		]
+	}
+}

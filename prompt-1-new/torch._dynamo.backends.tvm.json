@@ -1,0 +1,47 @@
+
+{
+	"tvm": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return torch.from_numpy(nd_tensor.numpy())",
+				"func": "to_torch_tensor",
+				"note": "Boolean tensor conversion through numpy may lose precision"
+			},
+			{
+				"type": "precision",
+				"target_line": "return tvm.nd.array(torch_tensor.cpu().numpy())",
+				"func": "to_tvm_tensor",
+				"note": "Boolean tensor conversion through numpy may lose precision"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(example_outputs) == 0",
+				"func": "tvm",
+				"note": "No check for None outputs, only empty tuple"
+			},
+			{
+				"type": "vulnerable",
+				"target_line": "cpuinfo = open(\"/proc/cpuinfo\").read()",
+				"func": "llvm_target",
+				"note": "Potential file handling vulnerability without proper error handling"
+			},
+			{
+				"type": "quantization",
+				"target_line": "mod, params = relay.frontend.from_pytorch(jit_mod, shape_list)",
+				"func": "tvm",
+				"note": "No explicit quantization handling in model conversion"
+			}
+		]
+	},
+	"llvm_target": {
+		"hints": [
+			{
+				"type": "type_inference",
+				"target_line": "return \"llvm -mcpu=skylake-avx512\"",
+				"func": "llvm_target",
+				"note": "Hardcoded CPU flags may not match actual hardware capabilities"
+			}
+		]
+	}
+}

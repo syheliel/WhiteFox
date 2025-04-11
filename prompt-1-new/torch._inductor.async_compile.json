@@ -1,0 +1,57 @@
+
+{
+	"AsyncCompile": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "elapsed_us = (time_ns() - start_ns) // 1000",
+				"func": "triton",
+				"comment": "Integer division may lose precision when converting nanoseconds to microseconds"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "def triton(self, kernel_name: str, source_code: str, device_str: str = \"cuda\")",
+				"func": "triton",
+				"comment": "No validation of kernel_name or source_code arguments"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "extra_env = {v: os.environ[v] for v in env_vars if v in os.environ}",
+				"func": "triton",
+				"comment": "Potential environment variable injection if env_vars contains untrusted input"
+			},
+			{
+				"type": "quantization",
+				"target_line": "kernel.set_compile_info(compile_id, is_backward)",
+				"func": "triton",
+				"comment": "No handling of quantization parameters in kernel compilation"
+			}
+		]
+	},
+	"CompiledTritonKernels": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "@staticmethod\ndef key(kernel_src: str)",
+				"func": "key",
+				"comment": "No validation of kernel_src input"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "CompiledTritonKernels._cache[key] = future",
+				"func": "save",
+				"comment": "Cache could grow unbounded if not properly managed"
+			}
+		]
+	},
+	"shutdown_compile_workers": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "for pool in _pool_set:\n    pool.shutdown()",
+				"func": "shutdown_compile_workers",
+				"comment": "No error handling if pool shutdown fails"
+			}
+		]
+	}
+}

@@ -1,0 +1,133 @@
+
+{
+	"index_add": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "if not is_fbcode() and x.dtype == torch.bfloat16:",
+				"func": "index_add",
+				"note": "Special handling for bfloat16 outside fbcode may indicate precision concerns"
+			}
+		]
+	},
+	"round_dec": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "ten_pow_decimals = 10.0**decimals",
+				"func": "round_dec",
+				"note": "Floating point operations in rounding may introduce precision errors"
+			}
+		]
+	},
+	"bmm": {
+		"hints": [
+			{
+				"type": "device_specific",
+				"target_line": "if config.coordinate_descent_tuning and self.device.type not in [\"cpu\", \"mps\"]:",
+				"func": "bmm",
+				"note": "Device-specific optimizations may behave differently across platforms"
+			}
+		]
+	},
+	"addmm": {
+		"hints": [
+			{
+				"type": "device_specific",
+				"target_line": "if self.device.type == \"cpu\":",
+				"func": "addmm",
+				"note": "CPU-specific path may not be optimal for other devices"
+			}
+		]
+	},
+	"mm": {
+		"hints": [
+			{
+				"type": "device_specific",
+				"target_line": "if config.coordinate_descent_tuning and self.device.type not in [\"cpu\", \"mps\"]:",
+				"func": "mm",
+				"note": "Device-specific optimizations may behave differently across platforms"
+			}
+		]
+	},
+	"cat": {
+		"hints": [
+			{
+				"type": "edge_case",
+				"target_line": "if len(filtered_tensors) == 1:",
+				"func": "cat",
+				"note": "Special handling for single tensor input may miss edge cases"
+			}
+		]
+	},
+	"angle": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "pi = torch.scalar_tensor(math.pi, dtype=dtype, device=x.device)",
+				"func": "angle",
+				"note": "Pi constant may not be precise enough for some use cases"
+			}
+		]
+	},
+	"add": {
+		"hints": [
+			{
+				"type": "type_check",
+				"target_line": "if not x_is_complex_tensor or not y_is_complex_tensor:",
+				"func": "add",
+				"note": "Strict complex tensor requirement may be too restrictive"
+			}
+		]
+	},
+	"choose_qparams_tensor": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "scale = (max_val - min_val) / float(quant_max - quant_min)",
+				"func": "choose_qparams_tensor",
+				"note": "Quantization scale calculation may lose precision"
+			}
+		]
+	},
+	"_softmax_backward_data": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "if grad_output.dtype != input_dtype:",
+				"func": "_softmax_backward_data",
+				"note": "Dtype conversion may affect numerical precision"
+			}
+		]
+	},
+	"index_reduce": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "if reduction_type == \"mean\" and not needs_fallback_due_to_atomic_add_limitations(self.dtype):",
+				"func": "index_reduce",
+				"note": "Mean reduction may have precision issues with certain dtypes"
+			}
+		]
+	},
+	"max_pool2d_with_indices": {
+		"hints": [
+			{
+				"type": "edge_case",
+				"target_line": "if window_size > torch.iinfo(torch.int8).max",
+				"func": "max_pool2d_with_indices",
+				"note": "Large window sizes may trigger fallback unexpectedly"
+			}
+		]
+	},
+	"adaptive_max_pool2d": {
+		"hints": [
+			{
+				"type": "edge_case",
+				"target_line": "if h_out == 0 or w_out == 0:",
+				"func": "adaptive_max_pool2d",
+				"note": "Zero-sized output edge case handling may be incomplete"
+			}
+		]
+	}
+}

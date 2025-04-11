@@ -1,0 +1,45 @@
+
+{
+	"ConstantAttrMap": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "real_key = hash(key) if isinstance(key, torch.ScriptObject) else key",
+				"func": "__contains__",
+				"reason": "Potential hash collision vulnerability for ScriptObjects"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "raise TypeError(f\"Expected key to be a tensor or ScriptObject, got {type(key)}\")",
+				"func": "add",
+				"reason": "Incomplete type checking - missing FakeScriptObject in error message"
+			}
+		]
+	},
+	"lift_constants_pass": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "const_placeholder_node.meta[\"val\"] = fake_mode.from_tensor(constant_val, static_shapes=True)",
+				"func": "lift_constants_pass",
+				"reason": "Potential precision loss when converting tensors in fake mode"
+			},
+			{
+				"type": "vulnerable",
+				"target_line": "constant_val = constant_val.data",
+				"func": "lift_constants_pass",
+				"reason": "Direct data access without proper validation could lead to security issues"
+			}
+		]
+	},
+	"rewrite_script_object_meta": {
+		"hints": [
+			{
+				"type": "type_inference",
+				"target_line": "class_fqn = old_meta._type().qualified_name()",
+				"func": "rewrite_script_object_meta",
+				"reason": "Potential type inference issue with ScriptObject's qualified_name"
+			}
+		]
+	}
+}

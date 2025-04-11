@@ -1,0 +1,155 @@
+
+{
+	"post_grad_passes": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "gm.graph.eliminate_dead_code()",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "group_batch_fusion_passes(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "remove_noop_ops(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "remove_assert_ops(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "patterns.apply(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "pattern_matcher_pass.apply(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "B2B_GEMM_PASS.apply(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "micro_pipeline_tp_pass(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "fuse_ddp_communication(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "stable_topological_sort(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "move_constructors_to_gpu(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "reinplace_inplaceable_ops(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "decompose_triton_kernel_wrapper_functional(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "decompose_auto_functionalized(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "comms.reinplace_fsdp_all_gather(gm.graph)",
+				"func": "post_grad_passes"
+			},
+			{
+				"type": "trigger",
+				"target_line": "lower_scan_to_while_loop(gm.graph)",
+				"func": "post_grad_passes"
+			}
+		]
+	},
+	"lower_scan_to_while_loop": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "match.replace_by_example(lower_to_while_loop, lower_to_while_loop_args, run_functional_passes=False)",
+				"func": "lower_scan_to_while_loop"
+			}
+		]
+	},
+	"remove_noop_ops": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "node.replace_all_uses_with(src)",
+				"func": "remove_noop_ops"
+			},
+			{
+				"type": "trigger",
+				"target_line": "graph.erase_node(node)",
+				"func": "remove_noop_ops"
+			}
+		]
+	},
+	"remove_assert_ops": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "graph.erase_node(node)",
+				"func": "remove_assert_ops"
+			}
+		]
+	},
+	"decompose_triton_kernel_wrapper_functional": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "match.replace_by_example(decomp, flat_args, run_functional_passes=False)",
+				"func": "decompose_triton_kernel_wrapper_functional"
+			}
+		]
+	},
+	"decompose_auto_functionalized": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "match.replace_by_example(decomp, flat_args, run_functional_passes=False)",
+				"func": "decompose_auto_functionalized"
+			}
+		]
+	},
+	"ConstructorMoverPass": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "kwargs[\"device\"] = next(iter(target_devices))",
+				"func": "ConstructorMoverPass"
+			}
+		]
+	},
+	"move_constructors_to_gpu": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "ConstructorMoverPass(get_gpu_type())(graph)",
+				"func": "move_constructors_to_gpu"
+			}
+		]
+	}
+}

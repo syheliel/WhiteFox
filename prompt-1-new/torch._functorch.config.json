@@ -1,0 +1,73 @@
+
+{
+	"functionalize_rng_ops": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "functionalize_rng_ops = False",
+				"func": "functionalize_rng_ops",
+				"comment": "Only functionalizes CUDA rng ops, which may lead to precision issues with other rng ops"
+			}
+		]
+	},
+	"fake_tensor_allow_meta": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "fake_tensor_allow_meta = os.environ.get(\"FAKE_ALLOW_META\", \"1\") != \"0\"",
+				"func": "fake_tensor_allow_meta",
+				"comment": "Environment variable parsing may fail silently with invalid values"
+			}
+		]
+	},
+	"debug_partitioner": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "debug_partitioner = os.environ.get(\"AOT_PARTITIONER_DEBUG\", \"0\") != \"0\"",
+				"func": "debug_partitioner",
+				"comment": "Environment variable parsing may fail silently with invalid values"
+			}
+		]
+	},
+	"fake_tensor_allow_unsafe_data_ptr_access": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "fake_tensor_allow_unsafe_data_ptr_access = True",
+				"func": "fake_tensor_allow_unsafe_data_ptr_access",
+				"comment": "Allowing unsafe data pointer access could lead to security vulnerabilities"
+			}
+		]
+	},
+	"fake_tensor_propagate_real_tensors": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "fake_tensor_propagate_real_tensors = False",
+				"func": "fake_tensor_propagate_real_tensors",
+				"comment": "Mixing real and fake tensors could lead to precision inconsistencies"
+			}
+		]
+	},
+	"unsafe_allow_optimization_of_collectives": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "unsafe_allow_optimization_of_collectives = False",
+				"func": "unsafe_allow_optimization_of_collectives",
+				"comment": "Optimizing collectives could lead to deadlocks in distributed scenarios"
+			}
+		]
+	},
+	"graphsafe_rng_functionalization": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "graphsafe_rng_functionalization = True",
+				"func": "graphsafe_rng_functionalization",
+				"comment": "RNG functionalization in CUDA graphs may have precision implications"
+			}
+		]
+	}
+}

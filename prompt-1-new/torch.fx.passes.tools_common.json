@@ -1,0 +1,49 @@
+
+{
+	"get_node_target": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert node.op in CALLABLE_NODE_OPS",
+				"func": "get_node_target",
+				"comment": "Missing check for node.target type when node.op is 'call_module' or 'call_method'"
+			}
+		]
+	},
+	"is_node_output_tensor": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return type_ is not None and issubclass(type_, torch.Tensor)",
+				"func": "is_node_output_tensor",
+				"comment": "No handling for cases where type_ might be a Union type containing Tensor"
+			}
+		]
+	},
+	"FxNetAccFusionsFinder": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "if not (set(fusion_group.nodes) <= self.acc_nodes)",
+				"func": "__call__",
+				"comment": "Potential race condition when modifying self.acc_nodes during iteration"
+			}
+		]
+	},
+	"legalize_graph": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "indeg = dict.fromkeys(gm.graph.nodes, 0)",
+				"func": "legalize_graph",
+				"comment": "No validation of input gm parameter"
+			},
+			{
+				"type": "quantization",
+				"target_line": "PRIORITIZED_OPS = [",
+				"func": "legalize_graph",
+				"comment": "Hardcoded operator list may not cover all quantization-sensitive ops"
+			}
+		]
+	}
+}

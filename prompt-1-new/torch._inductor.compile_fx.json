@@ -1,0 +1,77 @@
+
+{
+    "compile_fx_inner": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "compiled_fn = AotCodeCompiler.compile(graph, wrapper_code.value, kernel_code.value, serialized_extern_kernel_nodes, device_type=graph.device_type, additional_files=[*dict.fromkeys(graph.wrapper_code.additional_files)])",
+                "func": "compile_fx_inner",
+                "note": "Potential precision loss in compiled code generation"
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "compiled_fn = AotCodeCompiler.compile(graph, wrapper_code.value, kernel_code.value, serialized_extern_kernel_nodes, device_type=graph.device_type, additional_files=[*dict.fromkeys(graph.wrapper_code.additional_files)])",
+                "func": "compile_fx_inner",
+                "note": "Potential security vulnerability in compiled code generation"
+            },
+            {
+                "type": "argument_check",
+                "target_line": "assert isinstance(next(iter(reversed(gm.graph.nodes))).args[0], (tuple, list)), (f\"inductor can only compile FX graphs which return a tuple/list, but got {gm.graph}\")",
+                "func": "compile_fx_inner",
+                "note": "Missing proper argument validation for graph output type"
+            }
+        ]
+    },
+    "cudagraphify_impl": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "static_outputs = model(list(static_inputs))",
+                "func": "cudagraphify_impl",
+                "note": "Potential precision loss in CUDA graph capture"
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "graph = torch.cuda.CUDAGraph()",
+                "func": "cudagraphify_impl",
+                "note": "Potential security vulnerability in CUDA graph capture"
+            }
+        ]
+    },
+    "compile_fx_aot": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert isinstance(model_, GraphModule), model_",
+                "func": "compile_fx_aot",
+                "note": "Missing proper argument validation for input type"
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "compiled_artifacts = compile_fx(model_, example_inputs_, inner_compile=functools.partial(inner_compile, extern_node_serializer=extern_node_serializer), config_patches=config_patches)",
+                "func": "compile_fx_aot",
+                "note": "Potential security vulnerability in compiled artifacts generation"
+            }
+        ]
+    },
+    "get_input_idxs_to_check": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if not isinstance(input, torch.Tensor)",
+                "func": "get_input_idxs_to_check",
+                "note": "Missing proper argument validation for input type"
+            }
+        ]
+    },
+    "fake_tensor_prop": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "fake_mode = detect_fake_mode(example_inputs)",
+                "func": "fake_tensor_prop",
+                "note": "Missing proper argument validation for fake mode detection"
+            }
+        ]
+    }
+}

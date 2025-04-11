@@ -1,0 +1,59 @@
+
+{
+	"WhileLoopOp.__call__": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not isinstance(carried_inputs, (tuple, list))",
+				"func": "WhileLoopOp.__call__"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not isinstance(additional_inputs, (tuple, list))",
+				"func": "WhileLoopOp.__call__"
+			}
+		]
+	},
+	"while_loop_dense": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not isinstance(carried_inputs, (tuple, list))",
+				"func": "while_loop_dense"
+			},
+			{
+				"type": "precision",
+				"target_line": "if (isinstance(pred, torch.Tensor) and pred.size() == torch.Size([]) and pred.dtype == torch.bool) or isinstance(pred, bool)",
+				"func": "while_loop_dense"
+			}
+		]
+	},
+	"_validate_input": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not callable(cond_fn) or not callable(body_fn)",
+				"func": "_validate_input"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not pytree.tree_all(lambda t: isinstance(t, (torch.Tensor, torch.SymInt, int)), carried_inputs)",
+				"func": "_validate_input"
+			}
+		]
+	},
+	"while_loop_func": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "if _has_potential_branch_input_mutation(fn, unwrapped_inputs, pre_dispatch=pre_dispatch)",
+				"func": "while_loop_func"
+			},
+			{
+				"type": "vulnerable",
+				"target_line": "if _has_potential_branch_input_alias(fn, unwrapped_inputs, pre_dispatch=pre_dispatch)",
+				"func": "while_loop_func"
+			}
+		]
+	}
+}

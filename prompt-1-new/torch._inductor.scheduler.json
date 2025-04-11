@@ -1,0 +1,82 @@
+
+{
+	"BaseSchedulerNode": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return all(isinstance(n, SchedulerNode) and can_codegen_without_upcasts(n, disallow_fp32_ops=True) for n in self.get_nodes())",
+				"func": "can_codegen_in_low_precision"
+			},
+			{
+				"type": "precision",
+				"target_line": "return all(isinstance(n, SchedulerNode) and can_codegen_without_upcasts(n) for n in self.get_nodes())",
+				"func": "can_codegen_without_upcasts"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert self.node is not None",
+				"func": "get_name"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert template is not None",
+				"func": "get_template_node_or_throw"
+			}
+		]
+	},
+	"SchedulerBuffer": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert self.node is not None",
+				"func": "get_aliases"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert self.node is not None",
+				"func": "get_mutations"
+			}
+		]
+	},
+	"Scheduler": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert device is not None",
+				"func": "get_backend"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert device.index is not None, \"device should have an index\"",
+				"func": "codegen"
+			}
+		]
+	},
+	"ExternKernelSchedulerNode": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert isinstance(self.node, ir.ExternKernel), f\"{type(node)=}\"",
+				"func": "codegen_extern_call"
+			}
+		]
+	},
+	"FusedSchedulerNode": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert self_sizes is not None",
+				"func": "reorder_loops_by_dep_pair"
+			}
+		]
+	},
+	"ForeachKernelSchedulerNode": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert device",
+				"func": "__init__"
+			}
+		]
+	}
+}

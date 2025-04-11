@@ -1,0 +1,73 @@
+
+{
+	"eager_noexcept": {
+		"hints": [
+			{
+				"type": "exception_handling",
+				"target_line": "return gm(*args)",
+				"func": "eager_noexcept",
+				"note": "Generic exception handling may mask specific errors"
+			}
+		]
+	},
+	"eager_debug": {
+		"hints": [
+			{
+				"type": "schema_validation",
+				"target_line": "with SchemaCheckMode():",
+				"func": "eager_debug",
+				"note": "Schema validation may impact performance"
+			}
+		]
+	},
+	"aot_eager_decomp_partition": {
+		"hints": [
+			{
+				"type": "config_handling",
+				"target_line": "with functorch_config.patch(config_patches):",
+				"func": "aot_eager_decomp_partition",
+				"note": "Configuration patching may have side effects"
+			}
+		]
+	},
+	"relu_compile_error_TESTING_ONLY": {
+		"hints": [
+			{
+				"type": "testing_only",
+				"target_line": "raise ReluCompileError",
+				"func": "relu_compile_error_TESTING_ONLY",
+				"note": "Intentionally throws errors for testing"
+			}
+		]
+	},
+	"relu_runtime_error_TESTING_ONLY": {
+		"hints": [
+			{
+				"type": "testing_only",
+				"target_line": "node.target = torch._assert",
+				"func": "relu_runtime_error_TESTING_ONLY",
+				"note": "Modifies graph to force runtime errors"
+			}
+		]
+	},
+	"relu_accuracy_error_TESTING_ONLY": {
+		"hints": [
+			{
+				"type": "testing_only",
+				"target_line": "node.target = torch.add",
+				"func": "relu_accuracy_error_TESTING_ONLY",
+				"note": "Modifies graph to force accuracy errors"
+			}
+		]
+	},
+	"non_leaf_compile_error_TESTING_ONLY": {
+		"hints": [
+			{
+				"type": "testing_only",
+				"target_line": "raise TestingOnlyCompileError",
+				"func": "non_leaf_compile_error_TESTING_ONLY",
+				"note": "Throws errors for non-leaf inputs"
+			}
+		]
+	}
+}

@@ -1,0 +1,55 @@
+
+{
+	"find_input_mutations": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "inputs[StorageWeakRef(meta_fk(n.meta)._typed_storage())].add(input_idx)",
+				"func": "find_input_mutations",
+				"reason": "Relies on storage weak ref which may not be stable for all tensor types"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not hasattr(n.target, '_schema')",
+				"func": "find_input_mutations",
+				"reason": "Missing proper validation of node target attributes"
+			}
+		]
+	},
+	"check_for_mutation_ignore_cuda_graph_managed_tensor": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "mutation_indices = find_input_mutations(aot_model.graph) - set(range(num_fixed))",
+				"func": "check_for_mutation_ignore_cuda_graph_managed_tensor",
+				"reason": "No validation of num_fixed against actual graph inputs"
+			}
+		]
+	},
+	"cudagraphs_inner": {
+		"hints": [
+			{
+				"type": "trigger",
+				"target_line": "static_inputs = [torch.zeros_like(x) for x in inputs]",
+				"func": "cudagraphs_inner",
+				"reason": "Potential performance issue with unnecessary input copying"
+			},
+			{
+				"type": "precision",
+				"target_line": "dst.copy_(src)",
+				"func": "cudagraphs_inner",
+				"reason": "Direct copy operations may not preserve precision for all tensor types"
+			}
+		]
+	},
+	"forward_cudagraphs": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "out = cudagraphify_impl(...)",
+				"func": "forward_cudagraphs",
+				"reason": "No explicit handling of quantized tensor types"
+			}
+		]
+	}
+}

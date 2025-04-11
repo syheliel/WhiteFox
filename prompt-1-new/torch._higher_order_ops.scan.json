@@ -1,0 +1,47 @@
+
+{
+	"scan": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "outs, idxs = zip(*[[torch.zeros([num_elems] + list(e.size()), dtype=e.dtype, device=e.device), torch.ones_like(e, dtype=torch.int64).unsqueeze(0)] for i, e in enumerate(dummy_out)])",
+				"func": "generic_scan",
+				"note": "Using torch.zeros for pre-allocation may lead to precision loss if not properly initialized"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert isinstance(additional_inputs, (tuple, list)), \"additional_inputs must be a tuple.\"",
+				"func": "ScanOp.__call__",
+				"note": "Only checks for tuple/list type but doesn't validate content types"
+			},
+			{
+				"type": "quantization",
+				"target_line": "sample_inits = [clone_input(x_init) for x_init in init]",
+				"func": "trace_scan",
+				"note": "Cloning inputs may affect quantization parameters if not handled properly"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "o.scatter_(0, ind * idx, x.unsqueeze(0))",
+				"func": "generic_scan",
+				"note": "Potential out-of-bounds access if indices are not properly validated"
+			},
+			{
+				"type": "type_inference",
+				"target_line": "carry_fake_tensors: list[torch.Tensor | torch.SymInt | int] = [c.meta[\"val\"] for c in carry]",
+				"func": "trace_scan",
+				"note": "Mixed type annotation may cause type inference issues"
+			}
+		]
+	},
+	"wrap_combine_fn_flat": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert len(args) == (num_init_leaves + num_inp_leaves), f\"Combin_fn received wrong number of arguments, expected {num_init_leaves + num_inp_leaves}, but got {len(args)}\"",
+				"func": "wrap_combine_fn_flat",
+				"note": "Only checks argument count but not types"
+			}
+		]
+	}
+}

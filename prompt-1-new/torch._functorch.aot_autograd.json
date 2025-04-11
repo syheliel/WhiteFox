@@ -1,0 +1,59 @@
+
+{
+	"process_inputs": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return fake_mode.from_tensor(x, static_shapes=False, symbolic_context=symbolic_context, source=source, trace=trace)",
+				"func": "process_inputs",
+				"note": "Using static_shapes=False may lead to precision issues with dynamic shapes."
+			}
+		]
+	},
+	"_create_aot_dispatcher_function": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if aot_config.is_export and len([x for x in fw_metadata.input_info if x.mutates_metadata]) != 0",
+				"func": "_create_aot_dispatcher_function",
+				"note": "Missing check for input mutations in non-export cases."
+			},
+			{
+				"type": "quantization",
+				"target_line": "if config.functionalize_rng_ops:",
+				"func": "_create_aot_dispatcher_function",
+				"note": "RNG operations may affect quantization behavior."
+			}
+		]
+	},
+	"aot_function": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "if cached_res is None:",
+				"func": "aot_function",
+				"note": "Cache mechanism may lead to incorrect results if inputs change between calls."
+			}
+		]
+	},
+	"aot_module_simplified": {
+		"hints": [
+			{
+				"type": "type_inference",
+				"target_line": "params_and_buffers = {**named_params, **named_buffers}",
+				"func": "aot_module_simplified",
+				"note": "Merging params and buffers may cause type confusion."
+			}
+		]
+	},
+	"_aot_export_function": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if no_tangents and trace_joint:",
+				"func": "_aot_export_function",
+				"note": "Missing validation for no_tangents in non-joint cases."
+			}
+		]
+	}
+}

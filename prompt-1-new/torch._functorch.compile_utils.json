@@ -1,0 +1,35 @@
+
+{
+	"fx_graph_cse": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "hash_arg = hash((tuple((a, type(a)) for a in args), tuple((a, type(a)) for a in kwargs)))",
+				"func": "fx_graph_cse",
+				"note": "Using hash for tensor comparison may lead to precision issues due to hash collisions"
+			},
+			{
+				"type": "vulnerable",
+				"target_line": "new_node = new_graph.node_copy(n, lambda x: env[x])",
+				"func": "fx_graph_cse",
+				"note": "Potential vulnerability in node copying without proper validation of environment mapping"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if hasattr(node.target, \"overloadpacket\"):",
+				"func": "get_aten_target",
+				"note": "Incomplete argument checking - doesn't verify node.target is valid before accessing"
+			}
+		]
+	},
+	"checkable_node": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if \"val\" not in node.meta or not isinstance(node.meta[\"val\"], torch.Tensor):",
+				"func": "checkable_node",
+				"note": "No validation of node input type before accessing meta data"
+			}
+		]
+	}
+}

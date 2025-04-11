@@ -1,0 +1,59 @@
+
+{
+	"MapWrapper": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not all(isinstance(t, torch.Tensor) for t in flat_xs):",
+				"func": "map_wrapper",
+				"comment": "Check for tensor types in mapped xs is present but could be more informative about which elements failed."
+			},
+			{
+					"type": "precision",
+				"target_line": "if any(cur_shape[0] != leading_dim_size for cur_shape in shapes):",
+				"func": "map_wrapper",
+				"comment": "Consistency check for leading dimensions is good but could include more detailed error information."
+			}
+		]
+	},
+	"MapImpl": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "return pytree.tree_unflatten(map_impl(flat_fn, flat_xs, args), out_spec)",
+				"func": "map_wrapper",
+				"comment": "Type inference for map_impl output relies on out_spec which might not handle quantized tensors properly."
+			}
+		]
+	},
+	"MapAutogradOp": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "with torch._C._AutoDispatchBelowAutograd():",
+				"func": "forward",
+				"comment": "AutoDispatchBelowAutograd might bypass security checks in certain contexts."
+			}
+		]
+	},
+	"trace_map": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "expanded_outs = pytree.tree_map(expand_tensor, example_outs)",
+				"func": "trace_map",
+				"comment": "Tensor expansion might not preserve precision for certain dtypes or quantization schemes."
+			}
+		]
+	},
+	"map_functionalize": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if _has_potential_branch_input_mutation(f, example_inputs, pre_dispatch=pre_dispatch):",
+				"func": "map_functionalize",
+				"comment": "Mutation check is good but error message could be more specific about which input was mutated."
+			}
+		]
+	}
+}

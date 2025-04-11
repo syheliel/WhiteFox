@@ -1,0 +1,39 @@
+
+{
+	"xla_backend_helper": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "compiled_graph = bridge.extract_compiled_graph(model, args)",
+				"func": "xla_backend_helper",
+				"note": "No validation of model or args before passing to extract_compiled_graph"
+			},
+			{
+				"type": "vulnerable",
+				"target_line": "compiled_graph(*args)",
+				"func": "xla_backend_helper",
+				"note": "Potential security risk if compiled_graph is maliciously modified"
+			}
+		]
+	},
+	"openxla_eval": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "return xla_backend_helper(model, fake_tensor_inputs, boxed=False)",
+				"func": "openxla_eval",
+				"note": "No validation of model or fake_tensor_inputs"
+			}
+		]
+	},
+	"openxla_eval_boxed": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "return xla_backend_helper(model, fake_tensor_inputs, boxed=True)",
+				"func": "openxla_eval_boxed",
+				"note": "No validation of model or fake_tensor_inputs"
+			}
+		]
+	}
+}

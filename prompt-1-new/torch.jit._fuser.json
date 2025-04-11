@@ -1,0 +1,45 @@
+
+{
+	"fuser": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "raise Exception(f\"unrecognized fuser option (name: {name})\")",
+				"func": "fuser",
+				"comment": "Should use a more specific exception type than generic Exception"
+			},
+			{
+				"type": "state_management",
+				"target_line": "torch._C._jit_set_profiling_executor(old_profiling_executor)",
+				"func": "fuser",
+				"comment": "Potential undefined variable if name is not fuser1 or fuser3"
+			}
+		]
+	},
+	"_script_method_graph_for": {
+		"hints": [
+			{
+				"type": "error_handling",
+				"target_line": "except Exception:",
+				"func": "_script_method_graph_for",
+				"comment": "Too broad exception catching, may mask important errors"
+			},
+			{
+				"type": "assertion",
+				"target_line": "assert len(eps) == 1",
+				"func": "_script_method_graph_for",
+				"comment": "Assertion may fail in production with optimized Python"
+			}
+		]
+	},
+	"set_fusion_strategy": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "return torch._C._jit_set_fusion_strategy(strategy)",
+				"func": "set_fusion_strategy",
+				"comment": "No validation of strategy input format"
+			}
+		]
+	}
+}

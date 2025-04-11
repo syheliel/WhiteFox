@@ -1,0 +1,45 @@
+
+{
+	"FoldedGraphModule": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "i.detach().clone() if not isinstance(i, int) else torch.Tensor([i]).to(device=self.device_for_folded_attrs)",
+				"func": "_create_param",
+				"note": "Potential precision loss when converting int to Tensor"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not self.has_folding_been_run: self.run_folding()",
+				"func": "__call__",
+				"note": "No check for kwargs being passed to super().__call__"
+			}
+		]
+	},
+	"split_const_subgraphs": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "setattr(split, node.target, getattr(non_const_gm, node.target))",
+				"func": "split_const_subgraphs",
+				"note": "Potential security issue with arbitrary attribute setting"
+			},
+			{
+				"type": "quantization",
+				"target_line": "const_nodes.add(node)",
+				"func": "split_const_subgraphs",
+				"note": "No handling of quantization-aware folding"
+			}
+		]
+	},
+	"_inline_module": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "call_mod_node_to_replace = None",
+				"func": "_inline_module",
+				"note": "No validation of inline_mod_name existence before processing"
+			}
+		]
+	}
+}

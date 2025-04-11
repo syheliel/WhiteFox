@@ -1,0 +1,95 @@
+
+{
+	"PostGradBatchLinearFusion": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "fused_bmm.meta[\"val\"] = aten.bmm(fused_inputs_meta_val, fused_weights_meta_val)",
+				"func": "PostGradBatchLinearFusion",
+				"note": "Potential precision loss when fusing multiple linear operations into bmm"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not self._is_input_2d(input_m) or not self._is_input_2d(weight_m)",
+				"func": "PostGradBatchLinearFusion",
+				"note": "Missing check for input tensor types"
+			}
+		]
+	},
+	"GroupLinearFusion": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "all(x % 2 == 0 for x in input_shape + weight_shape)",
+				"func": "GroupLinearFusion",
+				"note": "Hardcoded assumption about tensor dimensions being even"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "fused_mm = graph.call_function(torch.ops.fbgemm.gmm.default, args=(group_inputs, group_weights, group_biases), kwargs={\"smart_fused\": True})",
+				"func": "GroupLinearFusion",
+				"note": "External dependency on fbgemm with potential security implications"
+			}
+		]
+	},
+	"BatchLinearLHSFusion": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "fused_lhs.meta[\"example_value\"] = torch.addmm(cat_biases.meta[\"example_value\"], batch_input.meta[\"example_value\"], transposed_weights.meta[\"example_value\"])",
+				"func": "BatchLinearLHSFusion",
+				"note": "Potential precision loss in fused linear operations"
+			}
+		]
+	},
+	"PreGradBatchLinearFusion": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "bmm.meta[\"example_value\"] = torch.bmm(stack_inputs.meta[\"example_value\"], transpose_weight.meta[\"example_value\"])",
+				"func": "PreGradBatchLinearFusion",
+				"note": "Potential precision loss in batched linear operations"
+			}
+		]
+	},
+	"BatchLayernormFusion": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert all(eps == group_epss[0] for eps in group_epss), \"all epsilon values must be equal\"",
+				"func": "BatchLayernormFusion",
+				"note": "Missing check for valid epsilon values"
+			}
+		]
+	},
+	"BatchPointwiseOpsPreGradFusion": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "batch_op.meta[\"example_value\"] = self.op(stack_inputs.meta[\"example_value\"])",
+				"func": "BatchPointwiseOpsPreGradFusion",
+				"note": "Potential precision loss in batched pointwise operations"
+			}
+		]
+	},
+	"BatchPointwiseOpsPostGradFusion": {
+		"hints": [
+			{
+				"type": "type_inference",
+				"target_line": "batch_op.meta[\"val\"] = self.op(stack_inputs_meta)",
+				"func": "BatchPointwiseOpsPostGradFusion",
+				"note": "Potential type inference issues in post-grad fusion"
+			}
+		]
+	},
+	"BatchMathOpsPreGradFusion": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "batch_op.meta[\"example_value\"] = self.op(stack_inputs.meta[\"example_value\"], **kwargs)",
+				"func": "BatchMathOpsPreGradFusion",
+				"note": "Missing validation of kwargs for math operations"
+			}
+		]
+	}
+}

@@ -1,0 +1,79 @@
+
+{
+    "InstructionTranslatorBase": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "self.push(fn_var.call_function(self, self.popn(nargs), {}))",
+                "func": "stack_op",
+                "issue": "Potential precision loss in function call due to lack of type checking or handling of mixed precision inputs."
+            },
+            {
+                "type": "argument_check",
+                "target_line": "assert val is None or isinstance(val, VariableTracker)",
+                "func": "push",
+                "issue": "Insufficient argument validation for val in push method."
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "self.call_function(fn, args, kwargs)",
+                "func": "call_function",
+                "issue": "Potential security vulnerability due to lack of input sanitization in function calls."
+            },
+            {
+                "type": "quantization",
+                "target_line": "self.push(TensorVariable(proxy, **options))",
+                "func": "wrap_fx_proxy",
+                "issue": "Missing quantization handling for tensor operations."
+            }
+        ]
+    },
+    "InstructionTranslator": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert not self.one_graph",
+                "func": "should_compile_partial_graph",
+                "issue": "Missing validation for one_graph flag in partial graph compilation."
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "self.output.install_global_unsafe(name, new_code)",
+                "func": "create_call_resume_at",
+                "issue": "Potential security risk in installing global variables without proper validation."
+            }
+        ]
+    },
+    "InliningInstructionTranslator": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "self.symbolic_result = self.pop()",
+                "func": "RETURN_VALUE",
+                "issue": "Potential precision loss in handling return values during inlining."
+            },
+            {
+                "type": "argument_check",
+                "target_line": "assert result.skipped is False",
+                "func": "check_inlineable",
+                "issue": "Insufficient validation for skipped functions in inlining."
+            }
+        ]
+    },
+    "InliningGeneratorInstructionTranslator": {
+        "hints": [
+            {
+                "type": "quantization",
+                "target_line": "self.generated_items.append(top)",
+                "func": "YIELD_VALUE",
+                "issue": "Missing quantization handling for generator yield values."
+            },
+            {
+                "type": "vulnerability",
+                "target_line": "self.push(ConstantVariable.create(ex.value))",
+                "func": "YIELD_FROM",
+                "issue": "Potential security risk in handling generator exceptions."
+            }
+        ]
+    }
+}

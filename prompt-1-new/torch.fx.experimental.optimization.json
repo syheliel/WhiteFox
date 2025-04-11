@@ -1,0 +1,55 @@
+
+{
+	"fuse": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "fused_layer = fuse_conv_bn_eval(first_layer, bn)",
+				"func": "fuse",
+				"note": "Potential precision loss when fusing Conv and BN layers"
+			},
+			{
+				"type": "precision",
+				"target_line": "fused_layer = fuse_linear_bn_eval(first_layer, bn)",
+				"func": "fuse",
+				"note": "Potential precision loss when fusing Linear and BN layers"
+			}
+		]
+	},
+	"modules_to_mkldnn": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "new_module = mkldnn_map[type(cur_module)](cur_module, torch.float)",
+				"func": "modules_to_mkldnn",
+				"note": "Hardcoded float32 dtype may cause quantization issues"
+			}
+		]
+	},
+	"optimize_for_inference": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "if not isinstance(default_pass_config['mkldnn_layout_optimize'], dict)",
+				"func": "optimize_for_inference",
+				"note": "Incomplete argument validation for pass_config"
+			},
+			{
+				"type": "precision",
+				"target_line": "assert sample_parameter.dtype == torch.float, 'this pass is only for torch.float modules'",
+				"func": "optimize_for_inference",
+				"note": "Hardcoded float32 requirement may cause precision issues"
+			}
+		]
+	},
+	"gen_mkl_autotuner": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "sample_inputs = [torch.randn(node.shape) for node in input_nodes]",
+				"func": "gen_mkl_autotuner",
+				"note": "Random inputs may not represent actual data distribution"
+			}
+		]
+	}
+}

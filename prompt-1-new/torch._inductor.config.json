@@ -1,0 +1,73 @@
+
+{
+    "prologue_fusion_enabled": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "return version <= ENABLE_PROLOGUE_FUSION_VERSION",
+                "func": "prologue_fusion_enabled",
+                "description": "Comparison of version numbers may lead to precision issues if versions are not properly managed."
+            }
+        ]
+    },
+    "decide_compile_threads": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "compile_threads = min(32, cpu_count)",
+                "func": "decide_compile_threads",
+                "description": "No validation on the cpu_count value which could lead to incorrect thread count if cpu_count is invalid."
+            }
+        ]
+    },
+    "run_autoheuristic": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "return collect_autoheuristic(name) or use_autoheuristic(name)",
+                "func": "run_autoheuristic",
+                "description": "No validation on the 'name' parameter which could lead to errors if the name is not properly formatted or exists."
+            }
+        ]
+    },
+    "cpp": {
+        "hints": [
+            {
+                "type": "quantization",
+                "target_line": "vec_isa_ok: Optional[bool] = get_tristate_env(\"TORCHINDUCTOR_VEC_ISA_OK\")",
+                "func": "cpp",
+                "description": "Vector instruction set checks may not properly handle all quantization scenarios."
+            }
+        ]
+    },
+    "triton": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "codegen_upcast_to_fp32 = True",
+                "func": "triton",
+                "description": "Upcasting to fp32 may lead to precision loss in certain scenarios where lower precision is sufficient."
+            }
+        ]
+    },
+    "cuda": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "arch: Optional[str] = None",
+                "func": "cuda",
+                "description": "No validation on the arch parameter which could lead to errors if an invalid architecture is specified."
+            }
+        ]
+    },
+    "rocm": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "arch: list[str] = []",
+                "func": "rocm",
+                "description": "No validation on the arch list which could lead to errors if invalid architectures are specified."
+            }
+        ]
+    }
+}

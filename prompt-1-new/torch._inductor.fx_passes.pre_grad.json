@@ -1,0 +1,69 @@
+
+{
+	"fuse_conv_bn": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "fused_conv = fuse_conv_bn_eval(conv, bn)",
+				"func": "fuse_conv_bn",
+				"comment": "Fusing Conv and BN layers may introduce precision issues due to numerical instability."
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(node.args) != 8:",
+				"func": "fuse_conv_bn",
+				"comment": "Insufficient argument check for functional batch norm pattern matching."
+			}
+		]
+	},
+	"linear_transpose": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return torch.matmul(weight, input.transpose(-1, -2)) + bias.unsqueeze(-1)",
+				"func": "linear_transpose",
+				"comment": "Matrix multiplication with transpose may introduce numerical precision issues."
+			}
+		]
+	},
+	"transpose_linear": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return torch.matmul(input.transpose(-1, -2), weight.t()) + bias",
+				"func": "transpose_linear",
+				"comment": "Matrix multiplication with transpose may introduce numerical precision issues."
+			}
+		]
+	},
+	"transpose_matmul": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "return torch.matmul(A, B)",
+				"func": "transpose_matmul",
+				"comment": "Matrix multiplication with potential transposes may introduce numerical precision issues."
+			}
+		]
+	},
+	"remove_identity": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert len(args) == 1",
+				"func": "remove_identity",
+				"comment": "Insufficient argument validation for Identity module removal."
+			}
+		]
+	},
+	"pre_grad_passes": {
+		"hints": [
+			{
+				"type": "quantization",
+				"target_line": "quant_lift_up(gm)",
+				"func": "pre_grad_passes",
+				"comment": "Quantization pass may affect numerical precision of the model."
+			}
+		]
+	}
+}

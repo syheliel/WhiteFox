@@ -1,0 +1,69 @@
+
+{
+	"FxGraphCachePickler": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "values = t.tolist()",
+				"func": "_reduce_tensor",
+				"comment": "Converting tensor to list may lose precision for large tensors"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if t.is_mkldnn:",
+				"func": "_reduce_tensor",
+				"comment": "Missing proper error handling for mkldnn tensors"
+			}
+		]
+	},
+	"PersistentCache": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "timings[choice] = cache[op][inputs][precision][choice_hash]",
+				"func": "lookup",
+				"comment": "Precision settings affect cache key but not properly validated"
+			}
+		]
+	},
+	"write_atomic": {
+		"hints": [
+			{
+				"type": "race_condition",
+				"target_line": "tmp_path.rename(target=path)",
+				"func": "write_atomic",
+				"comment": "Potential race condition on Windows during file rename"
+			}
+		]
+	},
+	"CUDACodeCache": {
+		"hints": [
+			{
+				"type": "error_handling",
+				"target_line": "subprocess.check_output(cmd_parts, stderr=subprocess.STDOUT, env=os.environ)",
+				"func": "compile",
+				"comment": "Insufficient error handling for subprocess failures"
+			}
+		]
+	},
+	"ROCmCodeCache": {
+		"hints": [
+			{
+				"type": "error_handling",
+				"target_line": "subprocess.check_output(cmd_parts, stderr=subprocess.STDOUT, text=True, env=os.environ)",
+				"func": "compile",
+				"comment": "Insufficient error handling for subprocess failures"
+			}
+		]
+	},
+	"DLLWrapper": {
+		"hints": [
+			{
+				"type": "resource_management",
+				"target_line": "f_dlclose(self.DLL._handle)",
+				"func": "_dlclose",
+				"comment": "Potential resource leak if dlclose fails"
+			}
+		]
+	}
+}

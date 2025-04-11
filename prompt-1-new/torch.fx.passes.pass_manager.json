@@ -1,0 +1,45 @@
+
+{
+	"loop_pass": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "assert (n_iter is not None) ^ (predicate is not None), \"Exactly one of `n_iter`or `predicate` must be specified.\"",
+				"func": "loop_pass",
+				"comment": "The assertion checks for XOR condition but doesn't handle edge cases where both could be None or both could be non-None with proper error messages."
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if n_iter is not None and n_iter > 0:",
+				"func": "loop_pass",
+				"comment": "No explicit check for negative n_iter values which could lead to unexpected behavior."
+			}
+		]
+	},
+	"PassManager": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "def remove_pass(self, _passes: list[str]):",
+				"func": "PassManager",
+				"comment": "No type checking or validation for the input list of strings which could lead to runtime errors if incorrect types are passed."
+			},
+			{
+				"type": "argument_check",
+				"target_line": "def replace_pass(self, _target, _replacement):",
+				"func": "PassManager",
+				"comment": "No type checking or validation for _target and _replacement parameters which could lead to runtime errors."
+			}
+		]
+	},
+	"_validate_pass_schedule_constraint": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "def _validate_pass_schedule_constraint(constraint: Callable[[Callable, Callable], bool], passes: list[Callable]):",
+				"func": "_validate_pass_schedule_constraint",
+				"comment": "No validation for the constraint function's signature or the passes list contents which could lead to runtime errors."
+			}
+		]
+	}
+}

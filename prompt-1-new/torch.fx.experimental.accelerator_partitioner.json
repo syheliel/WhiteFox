@@ -1,0 +1,99 @@
+
+{
+	"Partitioner": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "total_size_of_graph += node.size_bytes.total_size",
+				"func": "partition_graph",
+				"comment": "Potential precision loss when accumulating total_size_of_graph with node.size_bytes.total_size"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(self.devices) == 0",
+				"func": "partition_graph",
+				"comment": "Missing validation for device memory sizes being positive"
+			},
+			{
+				"type": "quantization",
+				"target_line": "partition.used_mem_bytes = total_size_of_graph",
+				"func": "find_single_partition",
+				"comment": "No handling for quantization-aware memory size calculation"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "submodule = getattr(submodule, atom)",
+				"func": "is_embedding_node",
+				"comment": "Potential security issue with arbitrary attribute access"
+			},
+			{
+				"type": "precision",
+				"target_line": "device_to_left_mem_bytes[d] -= partition.used_mem_bytes",
+				"func": "get_device_partition_stats",
+				"comment": "Potential precision loss in memory size calculations"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(partition.parents) == 0",
+				"func": "get_bfs_level_partition",
+				"comment": "Missing check for circular dependencies in partition hierarchy"
+			},
+			{
+				"type": "quantization",
+				"target_line": "mem_bytes_needed += get_extra_size_of(node, nodes)",
+				"func": "calculate_mem_bytes_needed",
+				"comment": "No consideration for quantized tensor sizes"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "for atom in str(node.target).split(\".\")",
+				"func": "is_embedding_node",
+				"comment": "Potential code injection via node.target"
+			},
+			{
+				"type": "precision",
+				"target_line": "device_to_left_mem_bytes[partition] -= total_size_of_input_nodes",
+				"func": "size_based_partition",
+				"comment": "Potential floating point precision issues in memory tracking"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(self.partitions) == len(self.devices)",
+				"func": "size_based_partition",
+				"comment": "Missing validation for partition-device mapping consistency"
+			}
+		]
+	},
+	"sparse_nn_partition": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "total_size_of_non_embedding_partitions += partition.used_mem_bytes",
+				"func": "sparse_nn_partition",
+				"comment": "Potential precision loss in accumulating partition sizes"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(embedding_partitions) > len(self.devices)",
+				"func": "sparse_nn_partition",
+				"comment": "Missing validation for device memory capacity"
+			}
+		]
+	},
+	"cost_aware_partition": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "cost = get_latency_of_partitioned_graph",
+				"func": "cost_aware_partition",
+				"comment": "Potential precision issues in cost calculations"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if len(self.partitions) == 1",
+				"func": "search_combination",
+				"comment": "Missing validation for partition combinations"
+			}
+		]
+	}
+}

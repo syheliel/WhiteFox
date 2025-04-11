@@ -1,0 +1,29 @@
+
+{
+	"OperatorSupport": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "if arg_dtype not in dtypes:",
+				"func": "is_node_supported",
+				"note": "No epsilon comparison for floating point types, could lead to precision issues"
+			},
+			{
+				"type": "type_inference",
+				"target_line": "dtype = (tensor_meta.dtype if isinstance(tensor_meta, TensorMetadata) else arg.meta[\"type\"])",
+				"func": "_get_arg_dtype",
+				"note": "No type checking for the fallback case (arg.meta[\"type\"])"
+			}
+		]
+	},
+	"OpSupports": {
+		"hints": [
+			{
+				"type": "argument_check",
+				"target_line": "return node.name not in disallow_set",
+				"func": "_decline_if_node_in_names",
+				"note": "No input validation for disallow_set parameter"
+			}
+		]
+	}
+}

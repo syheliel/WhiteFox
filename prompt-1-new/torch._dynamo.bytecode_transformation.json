@@ -1,0 +1,109 @@
+
+{
+    "create_instruction": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if inst_has_op_bits(name):",
+                "func": "create_instruction",
+                "issue": "Inconsistent handling of op bits for instructions like LOAD_GLOBAL, LOAD_ATTR, LOAD_SUPER_ATTR"
+            },
+            {
+                "type": "argument_check",
+                "target_line": "if arg is not None and not isinstance(arg, int):",
+                "func": "create_instruction",
+                "issue": "Missing validation for arg type when op bits are involved"
+            }
+        ]
+    },
+    "create_load_const": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert is_safe_constant(val), f\"unsafe constant {val}\"",
+                "func": "create_load_const",
+                "issue": "Safety check for constants may not cover all cases"
+            }
+        ]
+    },
+    "create_rot_n": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "if sys.version_info < (3, 10) and n >= 5:",
+                "func": "create_rot_n",
+                "issue": "Rotation for n >= 5 not supported in Python < 3.10"
+            }
+        ]
+    },
+    "add_push_null": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if sys.version_info >= (3, 13):",
+                "func": "add_push_null",
+                "issue": "Version-specific handling may not cover all edge cases"
+            }
+        ]
+    },
+    "create_call_function": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if sys.version_info >= (3, 11):",
+                "func": "create_call_function",
+                "issue": "Complex version-specific logic for function calls"
+            }
+        ]
+    },
+    "virtualize_jumps": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if inst.opcode in dis.hasjabs or inst.opcode in dis.hasjrel:",
+                "func": "virtualize_jumps",
+                "issue": "Handling of jump targets may not cover all cases"
+            }
+        ]
+    },
+    "devirtualize_jumps": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if inst.opcode in jumps:",
+                "func": "devirtualize_jumps",
+                "issue": "Complex logic for devirtualizing jumps"
+            }
+        ]
+    },
+    "fix_extended_args": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "if inst.arg and inst.arg > 0xFFFFFF:",
+                "func": "fix_extended_args",
+                "issue": "Handling of large arguments may be incomplete"
+            }
+        ]
+    },
+    "fix_vars": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if instructions[i].opname == \"LOAD_GLOBAL\":",
+                "func": "fix_vars",
+                "issue": "Complex version-specific logic for variable handling"
+            }
+        ]
+    },
+    "transform_code_object": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert len(code_options[\"co_varnames\"]) == code_options[\"co_nlocals\"]",
+                "func": "transform_code_object",
+                "issue": "Assumption about co_varnames length may not hold"
+            }
+        ]
+    }
+}

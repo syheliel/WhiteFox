@@ -1,0 +1,23 @@
+
+{
+	"has_onnxruntime": {
+		"hints": [
+			{
+				"type": "improper_argument_check",
+				"target_line": "return is_onnxrt_backend_supported()",
+				"func": "has_onnxruntime",
+				"comment": "Function lacks proper argument validation before calling is_onnxrt_backend_supported()"
+			}
+		]
+	},
+	"information_displaying_backend": {
+		"hints": [
+			{
+				"type": "vulnerable",
+				"target_line": "raise ImportError(",
+				"func": "information_displaying_backend",
+				"comment": "Error message reveals too much internal implementation detail which could be a security concern"
+			}
+		]
+	}
+}

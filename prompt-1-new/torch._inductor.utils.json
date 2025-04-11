@@ -1,0 +1,103 @@
+
+{
+    "do_bench_using_profiling": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "estimate_ms = start_event.elapsed_time(end_event) / 5",
+                "func": "do_bench_using_profiling",
+                "comment": "Floating-point division may introduce precision issues."
+            }
+        ]
+    },
+    "ceildiv": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert isinstance(numer, int) and isinstance(denom, int)",
+                "func": "ceildiv",
+                "comment": "Inadequate type checking for sympy expressions."
+            }
+        ]
+    },
+    "use_scatter_fallback": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if op_overload.overloadpacket in (torch.ops.aten.scatter_reduce_, torch.ops.aten.scatter_reduce) and reduction_type is None:",
+                "func": "use_scatter_fallback",
+                "comment": "Complex conditional logic may lead to incorrect fallback decisions."
+            }
+        ]
+    },
+    "is_dynamic": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if isinstance(t, (ir.TensorBox, ir.StorageBox, ir.BaseView, ir.ComputedBuffer, ir.Buffer)):",
+                "func": "is_dynamic",
+                "comment": "Missing type checks for other possible input types."
+            }
+        ]
+    },
+    "tensor_is_aligned": {
+        "hints": [
+            {
+                "type": "precision",
+                "target_line": "return statically_known_true((tensor.storage_offset() * get_dtype_size(tensor.dtype)) % GPU_ALIGN_BYTES == 0)",
+                "func": "tensor_is_aligned",
+                "comment": "Potential precision loss in multiplication and modulo operations."
+            }
+        ]
+    },
+    "sympy_index_symbol_with_prefix": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert prefix != SymT.SIZE",
+                "func": "sympy_index_symbol_with_prefix",
+                "comment": "Insufficient validation for prefix argument."
+            }
+        ]
+    },
+    "get_bounds_index_expr": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "if config.compute_all_bounds and (fx_node := getattr(V.interpreter, \"current_node\", None)) and fx_node.target != \"index_expr\":",
+                "func": "get_bounds_index_expr",
+                "comment": "Complex conditional logic may lead to incorrect bounds calculation."
+            }
+        ]
+    },
+    "run_and_get_cpp_code": {
+        "hints": [
+            {
+                "type": "vulnerability",
+                "target_line": "with unittest.mock.patch.object(config, \"debug\", True):",
+                "func": "run_and_get_cpp_code",
+                "comment": "Potential security vulnerability due to debug mode exposure."
+            }
+        ]
+    },
+    "copy_misaligned_inputs": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "assert isinstance(_inp, torch.Tensor)",
+                "func": "copy_misaligned_inputs",
+                "comment": "Missing type checks for other possible input types."
+            }
+        ]
+    },
+    "is_same_tensor": {
+        "hints": [
+            {
+                "type": "argument_check",
+                "target_line": "return (not data.is_mkldnn and data.size() == value.size() and data.stride() == value.stride() and data.dtype == value.dtype and data.device == value.device and data.untyped_storage().data_ptr() == value.untyped_storage().data_ptr() and data.storage_offset() == value.storage_offset())",
+                "func": "is_same_tensor",
+                "comment": "Complex conditional logic may lead to incorrect tensor comparison."
+            }
+        ]
+    }
+}

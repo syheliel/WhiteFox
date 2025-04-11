@@ -1,0 +1,79 @@
+
+{
+	"GuardBuilder": {
+		"hints": [
+			{
+				"type": "precision",
+				"target_line": "if istype(val, float) and math.isnan(val):",
+				"func": "EQUALS_MATCH",
+				"note": "Special case for nan comparison may have precision issues"
+			},
+			{
+				"type": "precision",
+				"target_line": "if istype(val, complex) and np.isnan(val):",
+				"func": "EQUALS_MATCH",
+				"note": "Special case for complex nan comparison may have precision issues"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "assert istype(val, ok_types) or pytree.is_constant_class(type(val))",
+				"func": "EQUALS_MATCH",
+				"note": "Missing proper type validation for common constant types"
+			},
+			{
+				"type": "vulnerability",
+				"target_line": "self._weakrefs.clear()",
+				"func": "__init__",
+				"note": "Potential memory leak if weakref finalizers aren't properly cleaned up"
+			},
+			{
+				"type": "quantization",
+				"target_line": "dispatch_key = (torch._C._dispatch_keys(value) | torch._C._dispatch_tls_local_include_set()) - torch._C._dispatch_tls_local_exclude_set()",
+				"func": "TENSOR_MATCH",
+				"note": "Dispatch key handling may affect quantization behavior"
+			},
+			{
+				"type": "type_inference",
+				"target_line": "if isinstance(value, TensorWeakRef): value = value()",
+				"func": "TENSOR_MATCH",
+				"note": "Weak reference handling may cause type inference issues"
+			}
+		]
+	},
+	"CheckFunctionManager": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "self._weakrefs[id(obj)] = weakref.ref(obj)",
+				"func": "id_ref",
+				"note": "Weakref dictionary could grow unbounded if objects are frequently created"
+			},
+			{
+				"type": "argument_check",
+				"target_line": "if not guard_manager.check(output_graph.local_scope)",
+				"func": "__init__",
+				"note": "Missing proper validation of guard check results"
+			}
+		]
+	},
+	"PyExprCSEPass": {
+		"hints": [
+			{
+				"type": "performance",
+				"target_line": "expr = _ast_unparse(node)",
+				"func": "visit",
+				"note": "AST unparsing could be expensive for large expressions"
+			}
+		]
+	},
+	"GuardManagerWrapper": {
+		"hints": [
+			{
+				"type": "vulnerability",
+				"target_line": "self._cached_guard_managers: dict[str, torch._C._dynamo.guards.GuardManager] = {}",
+				"func": "__init__",
+				"note": "Cache could grow unbounded if sources are frequently created"
+			}
+		]
+	}
+}
