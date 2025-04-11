@@ -1,6 +1,6 @@
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 import click
-from conf import TORCH_BASE
+from src.conf import TORCH_BASE
 import os
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties

@@ -10,8 +10,8 @@ ALL_MODEL: List[str] = [
     "deepseek-coder",
     "deepseek-reasoner",
     "deepseek-v3-250324", # 火山引擎
-    "qwen-2.5-coder-32b-instruct"
-]
+    "qwen/qwen-2.5-coder-32b-instruct" # open router
+] 
 def get_openai(model:str) -> openai.OpenAI:
     if model not in ALL_MODEL:
         raise ValueError(f"Model {model} is not supported")
@@ -21,7 +21,7 @@ def get_openai(model:str) -> openai.OpenAI:
     elif model in ["deepseek-v3-250324"]:
         api_key = Path("ark.key").read_text().strip()
         base_url = "https://ark.cn-beijing.volces.com/api/v3"
-    elif model in ["qwen-2.5-coder-32b-instruct"]:
+    elif model in ["qwen/qwen-2.5-coder-32b-instruct"]:
         api_key = Path("openrouter.key").read_text().strip()
         base_url = "https://openrouter.ai/api/v1"
     else:

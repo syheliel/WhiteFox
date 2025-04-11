@@ -23,10 +23,17 @@ dependencies = [
     "graphviz (>=0.20.3,<0.21.0)",
     "chromadb (>=1.0.4,<2.0.0)",
     "langchain-community (>=0.3.21,<0.4.0)",
-    "langchain-voyageai (>=0.1.4,<0.2.0)"
+    "langchain-voyageai (>=0.1.4,<0.2.0)",
+    "tlparse (>=0.3.39,<0.4.0)"
 ]
 
+[tool.poetry.scripts]
+get_opt = "src.kg.get_optinfo:main"
+opt_to_prompt = "src.kg.optinfo_to_prompt:main"
+prompt_to_spec = "src.kg.prompt_to_spec:main"
+spec_to_code = "src.kg.spec_to_code:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+

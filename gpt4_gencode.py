@@ -11,7 +11,7 @@ import re
 import click
 
 # It's recommended to install the openai library: pip install openai
-from llm_client import get_openai, ALL_MODEL
+from src.llm_client import get_openai, ALL_MODEL
 from openai import OpenAI
 
 class PromptParams(TypedDict):

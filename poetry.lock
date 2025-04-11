@@ -4406,6 +4406,27 @@ doc = ["reno", "sphinx"]
 test = ["pytest", "tornado (>=4.5)", "typeguard"]
 
 [[package]]
+name = "tlparse"
+version = "0.3.39"
+description = "Parse TORCH_LOG logs produced by PyTorch torch.compile"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "tlparse-0.3.39-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:e89504de73ba7360bacc22666718c55b9c9169dda38c23fed409522c95a77d68"},
+    {file = "tlparse-0.3.39-py3-none-macosx_11_0_arm64.whl", hash = "sha256:782b6906d57db6b3cbc0679bd6c451d90008fea4264d90a3da9db8a68e3ea22a"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dfc6f7ec517dc16a58dd866c7ddbdf1b85628ceff9aff1a5a8712c016e2e6af0"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:61179439d345a6a318e83c52257c7faf6d3e8d21917a96f36d2abeac155b169d"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:921324e1b5bcc08227dcc8e5c71b867bf95898dfb3157805f259ba5f94df9021"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:6aabf7f756e2b7a2889b13d664203d402f36a4cf013ec4ece75cc6e3a2172ffe"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:bbc4a373ab3732e3885ae9b2165a957f7c4d0e97e4168fe8b7e667e05808a05f"},
+    {file = "tlparse-0.3.39-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:24a67f60772bac6350c526256dfd911ba43ac181d5b8eb87f71c59261b4bb659"},
+    {file = "tlparse-0.3.39-py3-none-win32.whl", hash = "sha256:da6502d710ff0cd2315d12fce020624957e6542f3643d0feab49cee805fa1ee0"},
+    {file = "tlparse-0.3.39-py3-none-win_amd64.whl", hash = "sha256:a4f8343561c75b092a7a72ba542c1ed64431b04affabf0f080f2efaaea3bb821"},
+    {file = "tlparse-0.3.39.tar.gz", hash = "sha256:3bdf5d657640e358ad6b9842399e130d332e156bbbe221836089af35ccb8c7ae"},
+]
+
+[[package]]
 name = "tokenizers"
 version = "0.21.1"
 description = ""
@@ -5389,4 +5410,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <3.13"
-content-hash = "5814edb5a5c9705c7623c35e7ff499a86a8aeb8005bfe222ad82440e0438d2f4"
+content-hash = "5bf4b8ca3ba88f57b72e969566785d0ff27b21088b5d5ef2cb76ad7b912628fc"

@@ -1,0 +1,93 @@
+torch/_dynamo/:
+  - __init__.py
+  - backends/:
+    - __init__.py
+    - common.py
+    - cudagraphs.py
+    - debugging.py
+    - distributed.py
+    - inductor.py
+    - onnxrt.py
+    - registry.py
+    - tensorrt.py
+    - torchxla.py
+    - tvm.py
+  - bytecode_analysis.py
+  - bytecode_transformation.py
+  - compiled_autograd.py
+  - config.py
+  - convert_frame.py
+  - eval_frame.py
+  - graph_utils.py
+  - guards.py
+  - output_graph.py
+  - symbolic_convert.py
+
+torch/_inductor/:
+  - __init__.py
+  - async_compile.py
+  - codecache.py
+  - compile_fx.py
+  - config.py
+  - debug.py
+  - decomposition.py
+  - fx_passes/:
+    - __init__.py
+    - binary_folding.py
+    - fuse_attention.py
+    - group_batch_fusion.py
+    - joint_graph.py
+    - misc_patterns.py
+    - post_grad.py
+    - pre_grad.py
+    - reinplace.py
+  - graph.py
+  - lowering.py
+  - scheduler.py
+  - select_algorithm.py
+  - sizevars.py
+  - utils.py
+
+torch/_functorch/:
+  - __init__.py
+  - aot_autograd.py
+  - compile_utils.py
+  - compilers.py
+  - config.py
+
+torch/_higher_order_ops/:
+  - __init__.py
+  - cond.py
+  - map.py
+  - scan.py
+  - while_loop.py
+
+torch/compiler/:
+  - __init__.py
+  - config.py
+
+torch/jit/:
+  - _fuser.py
+  - _passes/:
+    - __init__.py
+    - _property_propagation.py
+
+torch/fx/:
+  - experimental/:
+    - accelerator_partitioner.py
+    - const_fold.py
+    - optimization.py
+  - passes/:
+    - infra/
+    - operator_support.py
+    - pass_manager.py
+    - split_module.py
+    - tools_common.py
+
+torch/_export/:
+  - passes/:
+    - __init__.py
+    - _remove_auto_functionalized_pass.py
+    - _remove_effect_tokens_pass.py
+    - constant_folding.py
+    - lift_constants_pass.py

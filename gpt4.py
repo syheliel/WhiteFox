@@ -12,7 +12,7 @@ import tqdm
 import click
 import concurrent.futures
 from typing import List, Dict, Any
-from llm_client import get_openai,ALL_MODEL
+from src.llm_client import get_openai,ALL_MODEL
 system_message = "You are a source code analyzer for {}."
 
 def process_msg(msg):
