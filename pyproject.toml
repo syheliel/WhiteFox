@@ -32,6 +32,7 @@ get_opt = "src.kg.get_optinfo:main"
 opt_to_prompt = "src.kg.optinfo_to_prompt:main"
 prompt_to_spec = "src.kg.prompt_to_spec:main"
 spec_to_code = "src.kg.spec_to_code:main"
+exec_code = "torch-exec.run_torch:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

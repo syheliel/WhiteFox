@@ -7,7 +7,7 @@ from pathlib import Path
 import argparse
 import os
 import torch
-from logger import logger
+from loguru import logger
 
 
 def get_last_tested():
@@ -56,7 +56,7 @@ def collect_cov(cov_datafile):
         return
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input-dir",
@@ -226,3 +226,6 @@ if __name__ == "__main__":
             break
         used_time = time.time() - start_time
         logger.info(f"Restart at time: {used_time}")
+
+if __name__ == "__main__":
+    main()
