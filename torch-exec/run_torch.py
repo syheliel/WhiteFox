@@ -4,10 +4,13 @@ This file runs the template_exec.py and restart it when it crashes.
 import subprocess as sp
 import time
 from pathlib import Path
-import argparse
 import os
 import torch
 from loguru import logger
+import click
+
+TEST_DIR = Path("test_dir")
+RESULT_DIR = Path("result_dir")
 
 
 def get_last_tested():
@@ -56,49 +59,68 @@ def collect_cov(cov_datafile):
         return
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input-dir",
-        type=str,
-        required=True,
-        help="the input dir of generated test cases",
-    )
-    parser.add_argument(
-        "--res-dir",
-        type=str,
-        default="_results",
-        help="the result dir to store outputs",
-    )
-    parser.add_argument(
-        "--device", type=str, default="cpu", help="the backend device to test"
-    )
-    parser.add_argument("--timeout", type=int, default=20)
-    parser.add_argument(
-        "--cov", action="store_true", default=False, help="collect coverage"
-    )
-    parser.add_argument(
-        "--cover",
-        action="store_true",
-        default=False,
-        help="whether the inputs trigger/cover the optimization",
-    )
-    parser.add_argument("--suffix", type=str, default="")
-    parser.add_argument("--validate", action="store_true", default=False)
+@click.command()
+@click.option(
+    "--input-dir",
+    type=str,
+    required=True,
+    help="the input dir of generated test cases",
+)
+@click.option(
+    "--res-dir",
+    type=str,
+    default="_results",
+    help="the result dir to store outputs",
+)
+@click.option(
+    "--device",
+    type=str,
+    default="cpu",
+    help="the backend device to test",
+)
+@click.option(
+    "--timeout",
+    type=int,
+    default=20,
+    help="timeout in seconds",
+)
+@click.option(
+    "--cov",
+    is_flag=True,
+    default=False,
+    help="collect coverage",
+)
+@click.option(
+    "--cover",
+    is_flag=True,
+    default=False,
+    help="whether the inputs trigger/cover the optimization",
+)
+@click.option(
+    "--suffix",
+    type=str,
+    default="",
+    help="suffix for result directory",
+)
+@click.option(
+    "--validate",
+    is_flag=True,
+    default=False,
+    help="validate mode",
+)
+def main(input_dir, res_dir, device, timeout, cov, cover, suffix, validate):
+    
+    TIMEOUT = timeout
+    DEVICE = device
 
-    args = parser.parse_args()
+    OUT_DIR = Path(input_dir)
 
-    TIMEOUT = args.timeout
-    DEVICE = args.device
-
-    OUT_DIR = Path(args.input_dir)
-
-    res_name = f"{OUT_DIR.name}-{args.device}"
-    if args.suffix != "":
-        res_name += f"-{args.suffix}"
-    if args.validate:
+    res_name = f"{OUT_DIR.name}-{device}"
+    if suffix != "":
+        res_name += f"-{suffix}"
+    if validate:
         res_name += "-validate"
-    RESULT_DIR = Path(args.res_dir) / res_name
+    RESULT_DIR = Path(res_dir) / res_name
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     TEST_DIR = RESULT_DIR / "test"
 
@@ -128,11 +150,11 @@ def main():
             "TORCHINDUCTOR_PERMUTE_FUSION": "1",
             "TORCHDYNAMO_VERBOSE": "1",
         }
-        if not args.cover:
+        if not cover:
             env["TORCHINDUCTOR_SHAPE_PADDING"] = "1"
         env = {**env, **os.environ}
 
-        if args.cov:
+        if cov:
             cov_data: Path = cov_dir / f".coverage.{cov_cnt}"
             python_cmd: list[str] = [
                 "python",
@@ -154,9 +176,9 @@ def main():
             f"--test-dir={TEST_DIR}",
             f"--device={DEVICE}",
         ]
-        if args.validate:
+        if validate:
             script_cmd.append("--validate")
-        if args.cover:
+        if cov:
             python_cmd.append("--cov")
 
         # Log the command being executed
@@ -195,7 +217,7 @@ def main():
                 used_time = time.time() - start_time
                 logger.info(f"Used time: {used_time}")
 
-                if args.cov:
+                if cov:
                     # combine the coverage
                     combine_cov(cov_dir, cov_datafile)
                     collect_cov(cov_datafile)
@@ -226,6 +248,7 @@ def main():
             break
         used_time = time.time() - start_time
         logger.info(f"Restart at time: {used_time}")
+
 
 if __name__ == "__main__":
     main()
