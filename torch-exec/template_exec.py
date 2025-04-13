@@ -1,4 +1,5 @@
 import click
+import src.conf
 import astunparse
 import json
 import os
@@ -21,7 +22,6 @@ TEST_LOG_PATH: Path = TEST_DIR / "tested.log"
 TEMP_LOG_PATH: Path = TEST_DIR / "atemp.py"
 DEVICE: str = "cpu"
 COV: bool = False
-TEST_WRAPPER: Optional[Callable] = None
 
 OUTPUT_LIMIT: int = 1024
 SEED: int = 420
@@ -260,16 +260,15 @@ class CodeParser:
 CODE_PARSER: CodeParser = CodeParser("torch")
 
 def _cross_check(func_def_code, tensors, filename):
+    logger.info(f"cross checking {filename}")
     func_def_code += f"test_inputs = [{', '.join(tensors)}]\n"
     TEMP_LOG_PATH.write_text(func_def_code)
 
     if COV:
         clean_match_cov()
 
-    if TEST_WRAPPER is None:
-        raise ValueError("TEST_WRAPPER is not initialized")
     
-    result, errors = TEST_WRAPPER(func_def_code, 420, tensors, DEVICE)
+    result, errors = test_wrapper(func_def_code, 420, tensors, DEVICE)
 
     if COV:
         match_info = {filename: get_match_cov()}
@@ -319,10 +318,7 @@ def validate(func_def_code:str, tensors:List[str], filename:str):
     func_def_code += f"test_inputs = [{', '.join(tensors)}]\n"
     TEMP_LOG_PATH.write_text(func_def_code)
 
-    if TEST_WRAPPER is None:
-        raise ValueError("TEST_WRAPPER is not initialized")
-    
-    result, errors = TEST_WRAPPER(func_def_code, 420, tensors, DEVICE, 'validate')
+    result, errors = test_wrapper(func_def_code, 420, tensors, DEVICE, 'validate')
     
     if result == ResType.PASS:
         with open(TEST_DIR / "success.log", "a") as fw:
@@ -390,10 +386,12 @@ def core_oracle(code:str, filename:str, is_validate:bool=False):
 
 def core_loop(args):
     tasks:List[Task] = read_all_tasks()
-    logger.info(f"Total tasks: {len(tasks)}")
-    tested = set([])
+    logger.info("all tasks:")
+    logger.info(f"read tested from: {TEST_LOG_PATH}")
     if TEST_LOG_PATH.exists():
         tested = set(open(TEST_LOG_PATH, "r").read().splitlines())
+    else:
+        tested = set([])
 
     count = 0
     for id in range(len(tasks)):
@@ -439,14 +437,13 @@ def core_loop(args):
 
 
 @click.command()
-@click.option('--lib', type=str, default='torch', help='Library to use (currently only torch is supported)')
 @click.option('--out-dir', type=str, default="out-5", help='Output directory')
 @click.option('--res-dir', type=str, default="res-5", help='Result directory')
 @click.option('--test-dir', type=str, default="test-5", help='Test directory')
 @click.option('--cov', is_flag=True, default=False, help='Enable coverage tracking')
 @click.option('--validate', is_flag=True, default=False, help='Run in validation mode')
 @click.option('--device', type=str, default='cpu', help='Device to run on (cpu, cuda, etc.)')
-def main(lib, out_dir, res_dir, test_dir , cov, validate, device):
+def main(out_dir, res_dir, test_dir , cov, validate, device):
     """Template execution script for testing PyTorch models."""
     global OUT_DIR, RESULT_DIR, TEST_DIR, TEST_LOG_PATH, TEMP_LOG_PATH, DEVICE, COV, MATCH_COV_FILE
     OUT_DIR = Path(out_dir)
@@ -468,15 +465,8 @@ def main(lib, out_dir, res_dir, test_dir , cov, validate, device):
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     TEST_DIR.mkdir(parents=True, exist_ok=True)
 
-    global CODE_PARSER, TEST_WRAPPER
-    if lib == "torch":
-        CODE_PARSER = CodeParser(lib_name="torch")
-        TEST_WRAPPER = test_wrapper
-    else:
-        # TODO: add support for other libraries
-        raise NotImplementedError(f"Library {lib} is not supported yet")
-
-    if COV and lib == "torch":
+    CODE_PARSER = CodeParser(lib_name="torch")
+    if COV:
         MATCH_COV_FILE = Path("/", "tmp", f"trigger-{RESULT_DIR.name}")
         torch.version.log_path = str(MATCH_COV_FILE) # type: ignore
 

@@ -5,6 +5,7 @@ import subprocess as sp
 import time
 from pathlib import Path
 import os
+import src.conf
 import torch
 from loguru import logger
 import click

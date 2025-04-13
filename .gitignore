@@ -177,6 +177,8 @@ result-4/
 gencode-4/
 
 code-3-new/
-result-4-new/
+code-3-new-2/
+result-4-new*/
 vectordb/
 *.key
+llm_model/

@@ -22,12 +22,10 @@ from constant.returntypes import ResType
 
 TEST_FUNC_EXEC_NAME = "func"
 IS_DEBUG_MODE = False
-__EXEC = exec
-__EVAL = eval
 
 def print_debug(*args):
     if IS_DEBUG_MODE:
-        print(*args)
+        logger.debug(*args)
 
 def check_status(fn, inputs):
     # check the status when the inputs are high-precision
@@ -207,32 +205,37 @@ def set_state():
 
 
 def test_wrapper(func_def_code:str, rand_seed:int, grad_tensors:list[str], device:str, test_fn:str="test_jit_oracle", test_ad:bool=False) -> tuple[ResType, dict[str, str]]:
+    logger.info(f"running test wrapper")
+    logger.info(f"grad tensor len: {len(grad_tensors)}")
+    logger.info(f"device: {device}")
+    logger.info(f"test fn: {test_fn}")
+    logger.info(f"test ad: {test_ad}")
     errors = {}
     if len(grad_tensors):
         set_seed(rand_seed)
         set_state()
         try:
-            __EXEC(func_def_code, globals())
+            exec(func_def_code, globals())
         except Exception as e:
             ret = ResType.SKIP
-            print(e)
-            print(func_def_code)
+            logger.error(e)
+            logger.error(func_def_code)
         else:
             try:
                 inputs_str = f"({', '.join(grad_tensors)},)"
 
                 # no grad env
                 if test_fn == "test_jit_oracle":
-                    ret, errors = __EVAL(f"{test_fn}(func, {inputs_str}, '{device}', {test_ad})")
+                    ret, errors = eval(f"{test_fn}(func, {inputs_str}, '{device}', {test_ad})")
                 else: 
-                    ret, errors = __EVAL(f"{test_fn}(func, {inputs_str}, '{device}')")
+                    ret, errors = eval(f"{test_fn}(func, {inputs_str}, '{device}')")
 
             except Exception as _run_error:
-                print(_run_error)
+                logger.error(_run_error)
                 errors['crash'] = str(_run_error)
                 ret = ResType.CRASH
     else:
         ret = ResType.SKIP
-        print("NO INPUT")
+        logger.info("NO INPUT")
 
     return (ret, errors)
