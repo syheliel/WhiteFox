@@ -12,9 +12,13 @@ import torch
 from loguru import logger
 import click
 from typing import List, Dict, Optional, Any, Tuple
+import concurrent.futures
+import threading
 
 from torch_exec.ProcessStatus import ProcessStatus
 
+# Thread-local storage for file managers
+thread_local = threading.local()
 
 class FileManager:
     """Manages file operations for logging and tracking test progress"""
@@ -154,6 +158,7 @@ class ProcessManager:
         self.file_manager = file_manager
         self.coverage_manager = coverage_manager
         self.start_time = time.time()
+        self.lock = threading.Lock()  # Add a lock for thread safety
     
     def get_environment(self, cover: bool) -> Dict[str, str]:
         """Get the environment variables for the process"""
@@ -204,28 +209,29 @@ class ProcessManager:
     
     def handle_process_result(self, exit_code: int, cur_test_target: str):
         """Handle process result and return whether to continue the loop"""
-        if exit_code == ProcessStatus.FINISH.value:
-            logger.info("FINISH")
-            used_time = time.time() - self.start_time
-            logger.info(f"Used time: {used_time}")
-            
-            if self.coverage_manager:
-                self.coverage_manager.combine_coverage()
-                self.coverage_manager.collect_coverage()
+        with self.lock:  # Use lock to ensure thread safety
+            if exit_code == ProcessStatus.FINISH.value:
+                logger.info("FINISH")
+                used_time = time.time() - self.start_time
+                logger.info(f"Used time: {used_time}")
                 
-            self.file_manager.log_time(used_time)
-            
-        elif exit_code == ProcessStatus.RETRY.value:
-            logger.info("Retrying ...")
-            
-        elif exit_code in [ProcessStatus.KILLED.value, ProcessStatus.KILLED_ALT.value]:
-            self.file_manager.log_killed(cur_test_target)
-            logger.warning(f"KILLED: {cur_test_target}")
-            
-        else:
-            logger.error(f"Process returned code: {exit_code}")
-            self.file_manager.log_crash(cur_test_target, exit_code)
-            logger.error(f"ERROR: {cur_test_target}")
+                if self.coverage_manager:
+                    self.coverage_manager.combine_coverage()
+                    self.coverage_manager.collect_coverage()
+                    
+                self.file_manager.log_time(used_time)
+                
+            elif exit_code == ProcessStatus.RETRY.value:
+                logger.info("Retrying ...")
+                
+            elif exit_code in [ProcessStatus.KILLED.value, ProcessStatus.KILLED_ALT.value]:
+                self.file_manager.log_killed(cur_test_target)
+                logger.warning(f"KILLED: {cur_test_target}")
+                
+            else:
+                logger.error(f"Process returned code: {exit_code}")
+                self.file_manager.log_crash(cur_test_target, exit_code)
+                logger.error(f"ERROR: {cur_test_target}")
     
     def run_process(self, api_dir: Path, result_dir: Path, device: str, 
                    timeout: int, validate: bool, cov: bool, cover: bool) -> None:
@@ -252,6 +258,24 @@ class ProcessManager:
         self.handle_process_result(process.returncode, api_dir.name)
     
 
+def process_api_dir(api_dir: Path, result_p: Path, device: str, timeout: int, 
+                   validate: bool, cov: bool, cover: bool, process_manager: ProcessManager) -> None:
+    """Process a single API directory in a thread"""
+    gencode_dir = result_p / api_dir.stem
+    if gencode_dir.exists():
+        logger.info(f"skip {api_dir.name} because it has already been tested")
+        return
+    
+    process_manager.run_process(
+        api_dir=api_dir,
+        result_dir=result_p,
+        device=device,
+        timeout=timeout,
+        validate=validate,
+        cov=cov,
+        cover=cover
+    )
+
 @click.command()
 @click.option(
     "--input-dir", type=str, required=True, help="the input dir of generated test cases"
@@ -269,6 +293,7 @@ class ProcessManager:
     help="whether the inputs trigger/cover the optimization",
 )
 @click.option("--validate", is_flag=True, default=False, help="validate mode")
+@click.option("--num-threads", type=int, default=8, help="number of threads to use for parallel processing")
 def main(
     input_dir: str,
     result_dir: str,
@@ -277,6 +302,7 @@ def main(
     cov: bool,
     cover: bool,
     validate: bool,
+    num_threads: int,
 ) -> None:
     # Setup directories
     input_p:Path = Path(input_dir)
@@ -295,21 +321,27 @@ def main(
     process_manager = ProcessManager(file_manager, coverage_manager)
     
     try:
-        # Run the process
-        for api_dir in tqdm.tqdm(api_dirs):
-            gencode_dir = result_p / api_dir.stem
-            if gencode_dir.exists():
-                logger.info(f"skip {api_dir.name} because it has already been tested")
-                continue
-            process_manager.run_process(
-                api_dir=api_dir,
-                result_dir=result_p,
-                device=device,
-                timeout=timeout,
-            validate=validate,
-            cov=cov,
-            cover=cover
-        )
+        # Run the process using a thread pool
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            # Submit all tasks to the executor
+            futures = [
+                executor.submit(
+                    process_api_dir,
+                    api_dir=api_dir,
+                    result_p=result_p,
+                    device=device,
+                    timeout=timeout,
+                    validate=validate,
+                    cov=cov,
+                    cover=cover,
+                    process_manager=process_manager
+                )
+                for api_dir in api_dirs
+            ]
+            
+            # Wait for all tasks to complete with a progress bar
+            for _ in tqdm.tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
+                pass
     finally:
         # Clean up
         file_manager.close()
