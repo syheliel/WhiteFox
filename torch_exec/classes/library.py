@@ -1,5 +1,5 @@
-from classes.argument import *
-from classes.api import *
+from torch_exec.classes.argument import *
+from torch_exec.classes.api import *
 from os.path import join
 import os
 

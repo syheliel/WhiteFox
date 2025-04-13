@@ -1,8 +1,8 @@
 import torch
-from classes.argdef import ArgDef
-from classes.argument import *
-from classes.api import *
-from utils.probability import (
+from torch_exec.classes.argdef import ArgDef
+from torch_exec.classes.argument import *
+from torch_exec.classes.api import *
+from torch_exec.utils.probability import (
     add_tensor_dimension,
     rm_tensor_dimension,
     change_tensor_dimension,

@@ -1,8 +1,8 @@
-from classes.torch_api import *
-from classes.library import Library
-from classes.argument import *
-from classes.api import *
-from constant.keys import *
+from torch_exec.classes.torch_api import *
+from torch_exec.classes.library import Library
+from torch_exec.classes.argument import *
+from torch_exec.classes.api import *
+from torch_exec.constant.keys import *
 
 
 class TorchLibrary(Library):

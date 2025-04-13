@@ -1,4 +1,4 @@
-from classes.argument import Argument
+from torch_exec.classes.argument import Argument
 
 
 class ArgDef:

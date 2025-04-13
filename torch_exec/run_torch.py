@@ -136,6 +136,8 @@ class CoverageManager:
         cov_jsonfile = self.cov_datafile.with_suffix(".json")
         ret = sp.run(
             [
+                "poetry",
+                "run",
                 "python",
                 "-m",
                 "coverage",
@@ -176,10 +178,10 @@ class ProcessManager:
         if cov and self.coverage_manager:
             python_cmd = self.coverage_manager.get_coverage_command()
         else:
-            python_cmd = ["python"]
+            python_cmd = ["poetry", "run","python", "-m"]
         
         script_cmd = [
-            "./torch_exec/template_exec.py",
+            "torch_exec.template_exec",
             f"--api-dir={out_dir}",
             f"--res-dir={result_dir}",
             f"--device={device}",
@@ -209,6 +211,7 @@ class ProcessManager:
     
     def handle_process_result(self, exit_code: int, cur_test_target: str):
         """Handle process result and return whether to continue the loop"""
+        print(exit_code)
         with self.lock:  # Use lock to ensure thread safety
             if exit_code == ProcessStatus.FINISH.value:
                 logger.info("FINISH")

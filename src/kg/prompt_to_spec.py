@@ -13,6 +13,7 @@ import click
 from pathlib import Path
 import tqdm
 import concurrent.futures
+import yaml
 import threading
 
 class Hint(TypedDict):
@@ -39,6 +40,13 @@ def extract_summary(prompt: str) -> str:
         return prompt[summary_start+len('```summary'):summary_end]
     return ""
 
+def extract_api(prompt: str) -> str:
+    summary_start = prompt.find('```yaml')
+    summary_end = prompt.rfind('```')
+    if summary_start != -1 and summary_end != -1:
+        return prompt[summary_start+len('```yaml'):summary_end]
+    return ""
+
 def get_spec_name(module_name:str, func_name:str) -> str:
     return f"{module_name}:{func_name}.json"
 
@@ -49,8 +57,8 @@ def module_to_path(module_name:str, base_path:Path=TORCH_BASE) -> Path:
 SYSTEM_PROMPT = r"""
 You are an expert in pytorch bug hunting. I will give you a specific source code from pytorch and a list of function that is vulnerable. please:
 1. SUMMARY: summarize the function's usage
-2. EXAMPLE: give an example of how to trigger the target_line in using normal pytorch code without touch the inner API.
-3. EXAMPLE: the generated code must contain a class that inherit from nn.Module and define forward function. 
+2. EXAMPLE: give an example of how to trigger the target_line in using normal pytorch code without touch the inner API. the python code must only contain one pytorch module
+3. potential API: list the potential api 
 Here is your example output:
 ```summary
 The BatchLayernormFusion class handles fusing multiple layer normalization operations in PyTorch graphs. The vulnerable line checks that all epsilon values used in the layer norm operations are equal before fusing them. This is important because:
@@ -60,21 +68,28 @@ The BatchLayernormFusion class handles fusing multiple layer normalization opera
 4. Missing validation could lead to incorrect fused results if epsilons differ
 ```
 ```python
-class DifferentModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv = nn.Conv1d(16, 32, kernel_size=1)  # 1D convolution with different channels
-        
+import torch
+import torch.nn as nn
+
+class FusedBatchLayerNorm(nn.Module):
+    """
+    融合 BatchNorm 和 LayerNorm 的模块
+    """
+    def __init__(self, num_features):
+        super(FusedBatchLayerNorm, self).__init__()
+        self.bn = nn.BatchNorm1d(num_features)
+        self.ln = nn.LayerNorm(num_features)
+
     def forward(self, x):
-        t1 = self.conv(x)
-        t2 = t1 * 0.5
-        t3 = t1 * 0.7071067811865476
-        t4 = torch.erf(t3)
-        t5 = t4 + 1
-        t6 = t2 * t5
-        return t6
+        x = self.bn(x)
+        x = self.ln(x)
+        return x
 ```
-When it's your turn, please output the summary and example code as the example format and with no other text.
+```yaml
+- nn.BatchNorm1d
+- nn.LayerNorm
+```
+When it's your turn, please output the summary,example code and the pentential api as the example format and with no other text.
 """
 
 # Thread-local storage for LLM clients
@@ -110,7 +125,7 @@ def process_prompt_item(prompt_item, output_p, model):
     ```
     {json.dumps(func_info, indent=4)}
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     """
     
     llm = get_thread_llm(model)
@@ -123,9 +138,11 @@ def process_prompt_item(prompt_item, output_p, model):
     )
     summary = extract_summary(prompt.choices[0].message.content) # type: ignore
     python_code = extract_python_code(prompt.choices[0].message.content) # type: ignore
+    api = extract_api(prompt.choices[0].message.content) # type: ignore
     res = {
         "summary": summary,
-        "python_code": python_code
+        "python_code": python_code,
+        "api": api
     }
     
     # Use a lock to prevent concurrent writes to the same file

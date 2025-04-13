@@ -1,6 +1,6 @@
 from numpy.random import choice, randint
 from enum import IntEnum
-from utils.probability import *
+from torch_exec.utils.probability import *
 
 
 class ArgType(IntEnum):

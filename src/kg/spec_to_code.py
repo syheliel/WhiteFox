@@ -37,7 +37,7 @@ class NewModel(nn.Module):
 model = NewModel()
 
 # Generate input tensor
-input_tensor = torch.randn(2, 4, 32, 32)  # Different input dimensions
+input_tensor = torch.randn(2, 4, 32, 32).cuda*()  # Different input dimensions, use cuda
 
 # Forward pass
 output = model(input_tensor)

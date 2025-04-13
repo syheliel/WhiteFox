@@ -12,6 +12,7 @@ import torch
 from torch_exec.torch_utils import test_wrapper
 from torch_exec.constant.returntypes import ResType
 from loguru import logger
+from torch_exec.constant.returntypes import ResType
 
 
 
@@ -312,7 +313,7 @@ def _cross_check(
 
         raise Exception("SKIP", "void")
     else:
-        exception_name = str(result).replace("ResType.", "")
+        exception_name = ResType(int(result)).name
         bug_dir = config["result_dir"] / exception_name.lower()
 
         os.makedirs(bug_dir, exist_ok=True)
