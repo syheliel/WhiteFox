@@ -1,10 +1,12 @@
 import torch
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 from loguru import logger
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import random
-from helper_torch import (
+from torch_exec.helper_torch import (
     DirectInv,
     RevInv,
     FwdInv,
@@ -17,22 +19,26 @@ from helper_torch import (
     get_trainable_fn,
     to_cuda,
 )
-from classes.torch_library import TorchLibrary
-from constant.returntypes import ResType
+from torch_exec.classes.torch_library import TorchLibrary
+from torch_exec.constant.returntypes import ResType
 
 TEST_FUNC_EXEC_NAME = "func"
 IS_DEBUG_MODE = False
 
+
 def print_debug(*args):
     if IS_DEBUG_MODE:
         logger.debug(*args)
+
+
 
 def check_status(fn, inputs):
     # check the status when the inputs are high-precision
     status, _, _ = DirectInv(fn, CopyInputs(inputs, precise=True))
     return status == "success"
 
-def validate(fn, inputs, device='cpu'):
+
+def validate(fn, inputs, device="cpu"):
     status, err, _ = DirectInv(fn, CopyInputs(inputs))
     if status == "success":
         return ResType.PASS, err
@@ -55,7 +61,9 @@ def check_jit_value(fn, inputs, device):
     is_random = False
     is_nan = False
     for _ in range(9):
-        direct_status_, direct_value_, direct_err_ = DirectInv(fn, inputs, device=device)
+        direct_status_, direct_value_, direct_err_ = DirectInv(
+            fn, inputs, device=device
+        )
         if direct_status != direct_status_ or not TorchLibrary.is_equal(
             direct_value, direct_value_, equal_nan=True
         ):
@@ -64,8 +72,10 @@ def check_jit_value(fn, inputs, device):
         elif not TorchLibrary.is_equal(direct_value, direct_value_):
             is_nan = True
             # return (ResType.NAN, errors)
-    
-    jit_status, jit_value, jit_err, jit_fn = DirectJitInv(fn, inputs, mode="inductor", device=device)
+
+    jit_status, jit_value, jit_err, jit_fn = DirectJitInv(
+        fn, inputs, mode="inductor", device=device
+    )
     jit_restype = ResType.PASS
     errors["jit"] = jit_err
 
@@ -94,6 +104,7 @@ def check_jit_value(fn, inputs, device):
             errors["jit"] = str(jit_value)
             jit_restype = ResType.JIT_VALUE
     return jit_restype, errors, jit_fn
+
 
 def check_grad_helper(fn, jit_fn, inputs, device, mode="rev"):
     if mode == "rev":
@@ -134,8 +145,6 @@ def check_grad_helper(fn, jit_fn, inputs, device, mode="rev"):
         restype = grad
 
     return restype, errors
-    
-
 
 
 def check_jit_grad(fn, jit_fn, inputs, device):
@@ -148,7 +157,7 @@ def check_jit_grad(fn, jit_fn, inputs, device):
         jit_restype = rev_restype
         errors.update(rev_errors)
         return jit_restype, errors
-    
+
     # Forward mode AD
     fwd_restype, fwd_errors = check_grad_helper(fn, jit_fn, inputs, device, mode="fwd")
     if fwd_restype != ResType.PASS:
@@ -157,16 +166,18 @@ def check_jit_grad(fn, jit_fn, inputs, device):
         return jit_restype, errors
 
     return jit_restype, errors
-    
 
-def test_jit_oracle(fn, inputs, device='cpu', test_ad=False):
+
+def test_jit_oracle(
+    fn, inputs: Any, device: str = "cpu", test_ad: bool = False
+) -> tuple[ResType, dict[str, str]]:
     inputs = CopyInputs(tuple(inputs), device=device)
-    errors = {
+    errors: dict[str, str] = {
         "direct": "",
         "jit": "",
     }
 
-    if 'cuda' in device:
+    if "cuda" in device:
         to_cuda(fn, device)
 
     # you need to disable the train at the beginning
@@ -174,11 +185,13 @@ def test_jit_oracle(fn, inputs, device='cpu', test_ad=False):
         fn.train(False)
         jit_restype, jit_err, _ = check_jit_value(fn, inputs, device=device)
         errors.update(jit_err)
-    
+
     if test_ad and jit_restype == ResType.PASS:
         fn.train(True)
         # check the value first
-        new_jit_restype, new_jit_err, jit_fn = check_jit_value(fn, inputs, device=device)
+        new_jit_restype, new_jit_err, jit_fn = check_jit_value(
+            fn, inputs, device=device
+        )
         if new_jit_restype == ResType.PASS:
             # then check the gradient
             jit_restype, errors = check_jit_grad(fn, jit_fn, inputs, device=device)
@@ -186,9 +199,8 @@ def test_jit_oracle(fn, inputs, device='cpu', test_ad=False):
     return (jit_restype, errors)
 
 
-
-def set_seed(seed):
-    torch.manual_seed(seed)
+def set_seed(seed: int) -> None:
+    torch.manual_seed(seed)  # type: ignore
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     # torch.backends.cudnn.deterministic = True
@@ -196,7 +208,8 @@ def set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
-def set_state():
+
+def set_state() -> None:
     # refresh the global state
     torch.set_grad_enabled(True)
     torch.set_anomaly_enabled(False)
@@ -204,18 +217,25 @@ def set_state():
     torch.set_default_tensor_type(torch.FloatTensor)
 
 
-def test_wrapper(func_def_code:str, rand_seed:int, grad_tensors:list[str], device:str, test_fn:str="test_jit_oracle", test_ad:bool=False) -> tuple[ResType, dict[str, str]]:
+def test_wrapper(
+    func_def_code: str,
+    rand_seed: int,
+    grad_tensors: List[str],
+    device: str,
+    log_file: Path,
+    test_fn: str = "test_jit_oracle",
+    test_ad: bool = False,
+) -> tuple[ResType, dict[str, str]]:
     logger.info(f"running test wrapper")
-    logger.info(f"grad tensor len: {len(grad_tensors)}")
-    logger.info(f"device: {device}")
-    logger.info(f"test fn: {test_fn}")
-    logger.info(f"test ad: {test_ad}")
-    errors = {}
+    logger.info(f"the modified file is under: {log_file}")
+    f = open(log_file, "a")
+    errors: dict[str, str] = {}
     if len(grad_tensors):
         set_seed(rand_seed)
         set_state()
         try:
             exec(func_def_code, globals())
+            f.write(func_def_code + "\n")
         except Exception as e:
             ret = ResType.SKIP
             logger.error(e)
@@ -226,13 +246,17 @@ def test_wrapper(func_def_code:str, rand_seed:int, grad_tensors:list[str], devic
 
                 # no grad env
                 if test_fn == "test_jit_oracle":
-                    ret, errors = eval(f"{test_fn}(func, {inputs_str}, '{device}', {test_ad})")
-                else: 
+                    ret, errors = eval(
+                        f"{test_fn}(func, {inputs_str}, '{device}', {test_ad})"
+                    )
+                    f.write(f"{test_fn}(func, {inputs_str}, '{device}', {test_ad}) = {ret}\n")
+                else:
                     ret, errors = eval(f"{test_fn}(func, {inputs_str}, '{device}')")
+                    f.write(f"{test_fn}(func, {inputs_str}, '{device}') = {ret}\n")
 
             except Exception as _run_error:
                 logger.error(_run_error)
-                errors['crash'] = str(_run_error)
+                errors["crash"] = str(_run_error)
                 ret = ResType.CRASH
     else:
         ret = ResType.SKIP

@@ -1,6 +1,7 @@
 import torch
 import json
-from gradcheck import (
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from torch_exec.gradcheck import (
     get_numerical_jacobian,
     _as_tuple,
     _differentiable_outputs,
@@ -10,7 +11,7 @@ from torch.autograd import forward_ad as fwad
 from torch.autograd.functional import jacobian
 from torch._functorch.eager_transforms import jacfwd, jacrev
 from loguru import logger
-from classes.torch_library import TorchLibrary
+from torch_exec.classes.torch_library import TorchLibrary
 
 NEIGHBOR_NUM = 5
 NEIGHBOR_STEP = 1e-4
@@ -21,15 +22,14 @@ RTOL = 1e-3
 USE_NEW_GRAD_FUNC = True
 
 
-
-def is_backward_tensor(res):
+def is_backward_tensor(res: Any) -> bool:
     if isinstance(res, torch.Tensor) and (res.grad_fn or res.requires_grad):
         return True
     else:
         return False
 
 
-def is_backward_res(res):
+def is_backward_res(res: Any) -> bool:
     if is_backward_tensor(res):
         return True
     else:
@@ -42,7 +42,8 @@ def is_backward_res(res):
         else:
             return False
 
-def get_trainable_fn(res, fn):
+
+def get_trainable_fn(res: Any, fn: Callable) -> List[Callable]:
     if isinstance(res, torch.Tensor):
         return [fn]
     elif isinstance(res, (tuple, list)):
@@ -54,8 +55,8 @@ def get_trainable_fn(res, fn):
         return []
 
 
-def backward(res):
-    def backward_tensor_with_grad(res):
+def backward(res: Any) -> None:
+    def backward_tensor_with_grad(res: Any) -> bool:
         if isinstance(res, torch.Tensor) and res.grad_fn:
             res.sum().backward()
             return True
@@ -68,21 +69,23 @@ def backward(res):
                 break
 
 
-def get_res_info(res):
+def get_res_info(res: Any) -> str:
     if is_backward_tensor(res):
         return json.dumps(
             {"shape": [int(i) for i in res.size()], "dtype": str(res.dtype)}
         )
     elif isinstance(res, (tuple, list)):
-        res = []
+        res_list = []
         for x in res:
-            res.append(get_res_info(x))
-        return str(res)
+            res_list.append(get_res_info(x))
+        return str(res_list)
     else:
         return "null"
 
 
-def is_equal_tensor(x, y):
+def is_equal_tensor(
+    x: torch.Tensor, y: torch.Tensor
+) -> Tuple[float, float, Optional[Tuple[int, ...]], Optional[Tuple[int, ...]]]:
     assert torch.is_tensor(x), "not a tensor"
     assert torch.is_tensor(y), "not a tensor"
     assert x.size() == y.size(), "size is not equal"
@@ -101,7 +104,7 @@ def is_equal_tensor(x, y):
             print(x[idx])
             print(y[idx])
             print(torch.allclose(x[idx], y[idx], rtol=1e-3, atol=1e-1))
-        rtol = diff / max(x[idx], y[idx])
+        rtol = diff / max(x[idx].item(), y[idx].item())
         if rtol > max_rtol:
             max_ridx = idx
             max_rtol = rtol
@@ -112,7 +115,7 @@ def is_equal_tensor(x, y):
     return max_atol, max_rtol, max_aidx, max_ridx
 
 
-def has_nan(x):
+def has_nan(x: Any) -> bool:
     if isinstance(x, torch.Tensor):
         return bool(torch.any(torch.isnan(x)))
     elif isinstance(x, (list, tuple)):
@@ -124,7 +127,7 @@ def has_nan(x):
         return False
 
 
-def all_zero(x):
+def all_zero(x: Any) -> bool:
     if isinstance(x, torch.Tensor):
         return torch.count_nonzero(x) == 0
     elif isinstance(x, (list, tuple)):
@@ -137,9 +140,16 @@ def all_zero(x):
 
 
 def is_differentiable(
-    fn, inputs, neighbor_step=NEIGHBOR_STEP, eps=EPS, atol=ATOL, rtol=RTOL
-):
-    def get_neighbor(inputs, type="left"):
+    fn: Callable,
+    inputs: Any,
+    neighbor_step: float = NEIGHBOR_STEP,
+    eps: float = EPS,
+    atol: float = ATOL,
+    rtol: float = RTOL,
+) -> bool:
+    def get_neighbor(
+        inputs: Tuple[torch.Tensor, ...], type: str = "left"
+    ) -> Tuple[torch.Tensor, ...]:
         res = []
         for tensor in inputs:
             if type == "left":
@@ -169,16 +179,19 @@ def is_differentiable(
         rand_jacobian = get_numerical_jacobian(fn, inputs_rand, eps=eps)
         for i in range(len(jacobians)):
             for j in range(len(jacobians[i])):
-                if not torch.allclose(
-                    jacobians[i][j], rand_jacobian[i][j], atol, rtol
-                ):
+                if not torch.allclose(jacobians[i][j], rand_jacobian[i][j], atol, rtol):
                     return False
     return True
 
 
 def is_grad_differentiable(
-    func, inputs, neighbor_step=NEIGHBOR_STEP, eps=EPS, atol=ATOL, rtol=RTOL
-):
+    func: Callable,
+    inputs: Any,
+    neighbor_step: float = NEIGHBOR_STEP,
+    eps: float = EPS,
+    atol: float = ATOL,
+    rtol: float = RTOL,
+) -> bool:
     if not is_differentiable(
         func,
         inputs,
@@ -194,9 +207,7 @@ def is_grad_differentiable(
     tupled_grad_outputs = tuple(
         torch.testing.make_tensor(
             x.shape,
-            dtype=x.dtype
-            if x.is_floating_point() or x.is_complex()
-            else torch.double,
+            dtype=x.dtype if x.is_floating_point() or x.is_complex() else torch.double,
             device=x.device,
             low=-1,
             high=1,
@@ -210,15 +221,13 @@ def is_grad_differentiable(
     # NB: We need to save the requires_grad information about the inputs here because gradcheck detaches inputs
     #     before running forward mode AD
     diff_input_args_indices = set(
-        i
-        for i, x in enumerate(tupled_inputs)
-        if is_tensor_like(x) and x.requires_grad
+        i for i, x in enumerate(tupled_inputs) if is_tensor_like(x) and x.requires_grad
     )
     diff_grad_output_indices = set(
         i for i, x in enumerate(tupled_grad_outputs) if x.requires_grad
     )
 
-    def new_func(*args):
+    def new_func(*args: Any) -> Tuple[torch.Tensor, ...]:
         # Restore the requires_grad information
         input_args = tuple(
             x.requires_grad_() if i in diff_input_args_indices else x
@@ -252,7 +261,7 @@ def is_grad_differentiable(
     )
 
 
-def allow_error(err):
+def allow_error(err: str) -> bool:
     _allow_errors = [
         "a leaf Variable that requires grad is being used in an in-place operation",
         "support automatic differentiation",
@@ -272,14 +281,14 @@ def allow_error(err):
         "not supported",
         "Trying to set a forward gradient that has a different size",
         "For complex Tensors, both grad_output and output are required to have the same dtype",
-        "Numerical gradient for function expected to be zero", # for numerical gradient check
-        "Can't detach views in-place", # for detach in forward mode AD
+        "Numerical gradient for function expected to be zero",  # for numerical gradient check
+        "Can't detach views in-place",  # for detach in forward mode AD
         "Can't call numpy() on Tensor that requires grad.",
-        "This could be because the operator doesn't exist for this backend", # no operator for backend
-        "vmap: We do not yet support calling random operations inside of vmap. Please perform random operations outside of vmap as a workaround", # for forward mode AD
-        "RuntimeError: mixed dtype (CPU)", # for gradcheck, since we use float64 to check
-        "stack expects a non-empty TensorList", # for reverse mode AD jacobian computation
-        "Can't call apply_() on Variable that requires grad. Use var.detach().apply_() instead.", 
+        "This could be because the operator doesn't exist for this backend",  # no operator for backend
+        "vmap: We do not yet support calling random operations inside of vmap. Please perform random operations outside of vmap as a workaround",  # for forward mode AD
+        "RuntimeError: mixed dtype (CPU)",  # for gradcheck, since we use float64 to check
+        "stack expects a non-empty TensorList",  # for reverse mode AD jacobian computation
+        "Can't call apply_() on Variable that requires grad. Use var.detach().apply_() instead.",
         "modified by an inplace operation",
         "can't allocate memory",
         "You must implement the jvp function for custom autograd.Function to use it with forward mode AD.",
@@ -293,11 +302,11 @@ def allow_error(err):
             "must have a setup_context",
             "is unsupported",
             "not yet support",
-            "Cannot access data pointer of Tensor that doesn't have storage", # not sure whether it's a bug
+            "Cannot access data pointer of Tensor that doesn't have storage",  # not sure whether it's a bug
             "vmap: It looks like you're calling .item() on a Tensor",
             "Expected all inputs to be real but received complex",
             "grad can be implicitly created only for real scalar",
-            "Expected all outputs to be real but"
+            "Expected all outputs to be real but",
         ]
     for a_err in _allow_errors:
         if a_err in err:
@@ -305,13 +314,16 @@ def allow_error(err):
     return False
 
 
-def is_crash(err):
+def is_crash(err: str) -> bool:
     return "INTERNAL ASSERT FAILED" in err
 
 
 def CopyInputs(
-    inputs: list[torch.Tensor], grad=False, device="cpu", precise=False
-):
+    inputs: List[torch.Tensor],
+    grad: bool = False,
+    device: str = "cpu",
+    precise: bool = False,
+) -> Tuple[Any, ...]:
     new_inputs = []
     to_kwargs = {"device": device}
     for inp in inputs:
@@ -332,7 +344,7 @@ def CopyInputs(
     return tuple(new_inputs)
 
 
-def DirectInv(fn, inputs, device="cpu"):
+def DirectInv(fn: Callable, inputs: Any, device: str = "cpu") -> Tuple[str, Any, str]:
     value = None
     err_msg = ""
     new_inputs = CopyInputs(inputs, device=device)
@@ -346,7 +358,9 @@ def DirectInv(fn, inputs, device="cpu"):
     return status, value, err_msg
 
 
-def RevInv(fn, inputs, device="cpu"):
+def RevInv(
+    fn: Callable, inputs: Any, device: str = "cpu"
+) -> Tuple[str, Any, Optional[List[Any]], str]:
     value = None
     err_msg = ""
     gradient = None
@@ -372,7 +386,9 @@ def RevInv(fn, inputs, device="cpu"):
     return status, value, gradient, err_msg
 
 
-def FwdInv(fn, inputs, device="cpu"):
+def FwdInv(
+    fn: Callable, inputs: Any, device: str = "cpu"
+) -> Tuple[str, Any, Optional[List[Any]], str]:
     value = None
     err_msg = ""
     gradient = None
@@ -401,7 +417,11 @@ def FwdInv(fn, inputs, device="cpu"):
                 if USE_NEW_GRAD_FUNC:
                     gradient.append(jacfwd(new_fn)(*inputs_1))
                 else:
-                    gradient.append(jacobian(new_fn, inputs_1, vectorize=True, strategy="forward-mode"))
+                    gradient.append(
+                        jacobian(
+                            new_fn, inputs_1, vectorize=True, strategy="forward-mode"
+                        )
+                    )
     except Exception as e:
         status = "fail"
         err_msg = str(e)
@@ -410,7 +430,9 @@ def FwdInv(fn, inputs, device="cpu"):
     return status, value, gradient, err_msg
 
 
-def NDCheck(fn, inputs, mode="rev", device="cpu"):
+def NDCheck(
+    fn: Callable, inputs: Any, mode: str = "rev", device: str = "cpu"
+) -> Tuple[str, str]:
     err_msg = ""
     try:
         inputs = CopyInputs(inputs, grad=True, device=device, precise=True)
@@ -439,15 +461,13 @@ def NDCheck(fn, inputs, mode="rev", device="cpu"):
     return status, err_msg
 
 
-def Grad(fn, inputs, device="cpu"):
+def Grad(fn: Callable, inputs: Any, device: str = "cpu") -> Callable:
     new_inputs = CopyInputs(inputs, grad=True, device=device)
     outputs = _as_tuple(fn(*new_inputs))
     tupled_grad_outputs = tuple(
         torch.testing.make_tensor(
             x.shape,
-            dtype=x.dtype
-            if x.is_floating_point() or x.is_complex()
-            else torch.double,
+            dtype=x.dtype if x.is_floating_point() or x.is_complex() else torch.double,
             device=x.device,
             low=1,
             high=1,
@@ -458,15 +478,13 @@ def Grad(fn, inputs, device="cpu"):
     num_outputs = len(tupled_grad_outputs)
 
     diff_input_args_indices = set(
-        i
-        for i, x in enumerate(new_inputs)
-        if is_tensor_like(x) and x.requires_grad
+        i for i, x in enumerate(new_inputs) if is_tensor_like(x) and x.requires_grad
     )
     diff_grad_output_indices = set(
         i for i, x in enumerate(tupled_grad_outputs) if x.requires_grad
     )
 
-    def new_func(*args):
+    def new_func(*args: Any) -> Tuple[torch.Tensor, ...]:
         # Restore the requires_grad information
         args = args + tupled_grad_outputs
         input_args = tuple(
@@ -506,7 +524,7 @@ dtype_precision_dict = {
 }
 
 
-def dtype_precision(dtype):
+def dtype_precision(dtype: Any) -> int:
     dtype = str(dtype)
     if "int" in dtype or "bool" in dtype:
         return 0
@@ -516,8 +534,8 @@ def dtype_precision(dtype):
         assert 0, f"No such dtype: {dtype}"
 
 
-def is_high_to_low_precision(inputs: list[torch.Tensor], output):
-    def _check(output: torch.Tensor):
+def is_high_to_low_precision(inputs: List[torch.Tensor], output: Any) -> bool:
+    def _check(output: torch.Tensor) -> bool:
         for input in inputs:
             if dtype_precision(input.dtype) > dtype_precision(output.dtype):
                 return True
@@ -534,8 +552,8 @@ def is_high_to_low_precision(inputs: list[torch.Tensor], output):
         return False
 
 
-def Filter(fn, inputs, is_ND=False) -> str:
-    def is_nan_grad(grad: list[torch.Tensor]):
+def Filter(fn: Callable, inputs: Any, is_ND: bool = False) -> str:
+    def is_nan_grad(grad: List[torch.Tensor]) -> bool:
         ret = False
         if isinstance(grad, (list, tuple)):
             ret = ret or any(is_nan_grad(t) for t in grad)
@@ -576,25 +594,30 @@ def Filter(fn, inputs, is_ND=False) -> str:
         return "Pass"
 
 
-def Jit(fn):
+def Jit(fn: Callable) -> Any:
     return torch.jit.script(fn)
 
 
-def Trace(fn, inputs, device="cpu"):
+def Trace(fn: Callable, inputs: Any, device: str = "cpu") -> Any:
     new_inputs = CopyInputs(inputs, device=device)
     return torch.jit.trace(fn, new_inputs)
 
 
-def Script(fn):
+def Script(fn: Callable) -> Any:
     return torch.jit.script(fn)
 
-def Inductor(fn):
+
+def Inductor(fn: Callable) -> Any:
     import intel_extension_for_pytorch
+
     backend = "ipex"
     logger.info(f"Compiling with inductor with backend {backend}")
     return torch.compile(fn, backend=backend)
 
-def DirectJitInv(fn, inputs, device="cpu", mode="trace"):
+
+def DirectJitInv(
+    fn: Callable, inputs: Any, device: str = "cpu", mode: str = "trace"
+) -> Tuple[str, Any, str, Any]:
     value = None
     jit_fn = None
     err_msg = ""
@@ -615,7 +638,7 @@ def DirectJitInv(fn, inputs, device="cpu", mode="trace"):
     return status, value, err_msg, jit_fn
 
 
-def allow_jit_error(err):
+def allow_jit_error(err: str) -> bool:
     _allow_jit_errs = [
         "Only tensors, lists, tuples of tensors, or dictionary of tensors can be output from traced functions",
     ]
@@ -625,7 +648,7 @@ def allow_jit_error(err):
     return False
 
 
-def is_inplace_grad_err(err):
+def is_inplace_grad_err(err: str) -> bool:
     _inplace_grad_errs = [
         "modified by an inplace operation",
         "modified inplace",
@@ -636,7 +659,7 @@ def is_inplace_grad_err(err):
     return False
 
 
-def to_cuda(model: torch.nn.Module, device: str = "cuda"):
+def to_cuda(model: torch.nn.Module, device: str = "cuda") -> None:
     for attr in dir(model):
         if isinstance(getattr(model, attr), torch.Tensor):
             setattr(model, attr, getattr(model, attr).to(device))
