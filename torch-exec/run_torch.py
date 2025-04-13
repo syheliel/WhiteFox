@@ -187,8 +187,8 @@ def main(input_dir, res_dir, device, timeout, cov, cover, suffix, validate):
 
         process = sp.Popen(
             python_cmd + script_cmd,
-            stdout=log_file,
-            stderr=stderr_file,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
             env=env,
         )
 
@@ -205,6 +205,19 @@ def main(input_dir, res_dir, device, timeout, cov, cover, suffix, validate):
                     continue
                 elif count >= TIMEOUT:
                     logger.warning("TIMEOUT, Kill process")
+                    try:
+                        stdout, stderr = process.communicate(timeout=1)
+                        logger.error("=== STDOUT at TIMEOUT ===")
+                        logger.error(stdout.decode())
+                        logger.error("=== STDERR at TIMEOUT ===")
+                        logger.error(stderr.decode())
+                        # Write to files as well
+                        log_file.write("\n=== STDOUT at TIMEOUT ===\n")
+                        log_file.write(stdout.decode())
+                        stderr_file.write("\n=== STDERR at TIMEOUT ===\n")
+                        stderr_file.write(stderr.decode())
+                    except sp.TimeoutExpired:
+                        pass
                     process.kill()
                     timeout_file.write(f"{cur_test_target} TIMEOUT\n")
                     timeout_file.write(str(TEST_DIR / "atemp.py") + "\n")
