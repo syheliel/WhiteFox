@@ -1,12 +1,7 @@
 import json
-import argparse
 from pathlib import Path
-from typing import List, Dict, TypedDict, Literal, Union
-import numpy as np
-import random
-import os
+from typing import List, Dict, TypedDict
 from src.llm_client import get_openai, ALL_MODEL
-# noqa: F401
 from src.conf import TORCH_BASE 
 from loguru import logger
 import click
@@ -15,6 +10,7 @@ import tqdm
 import concurrent.futures
 import yaml
 import threading
+from pathlib import Path
 
 class Hint(TypedDict):
     type: str
@@ -24,27 +20,37 @@ class Hint(TypedDict):
 
 class FuncLevelPrompt(TypedDict):
     hints: List[Hint]
+class UnifiedPrompt(TypedDict):
+    file_name: str
+    func_name: str
+    func_info: FuncLevelPrompt
     
 
 def extract_python_code(prompt: str) -> str:
     python_start = prompt.find('```python')
-    python_end = prompt.rfind('```')
-    if python_start != -1 and python_end != -1:
-        return prompt[python_start+len('```python'):python_end]
+    if python_start != -1:
+        # Find the first closing backtick after the opening ```python
+        python_end = prompt.find('```', python_start + len('```python'))
+        if python_end != -1:
+            return prompt[python_start+len('```python'):python_end]
     return ""
 
 def extract_summary(prompt: str) -> str:
     summary_start = prompt.find('```summary')
-    summary_end = prompt.rfind('```')
-    if summary_start != -1 and summary_end != -1:
-        return prompt[summary_start+len('```summary'):summary_end]
+    if summary_start != -1:
+        # Find the first closing backtick after the opening ```summary
+        summary_end = prompt.find('```', summary_start + len('```summary'))
+        if summary_end != -1:
+            return prompt[summary_start+len('```summary'):summary_end]
     return ""
 
 def extract_api(prompt: str) -> str:
-    summary_start = prompt.find('```yaml')
-    summary_end = prompt.rfind('```')
-    if summary_start != -1 and summary_end != -1:
-        return prompt[summary_start+len('```yaml'):summary_end]
+    yaml_start = prompt.find('```yaml')
+    if yaml_start != -1:
+        # Find the first closing backtick after the opening ```yaml
+        yaml_end = prompt.find('```', yaml_start + len('```yaml'))
+        if yaml_end != -1:
+            return prompt[yaml_start+len('```yaml'):yaml_end]
     return ""
 
 def get_spec_name(module_name:str, func_name:str) -> str:
@@ -58,7 +64,7 @@ SYSTEM_PROMPT = r"""
 You are an expert in pytorch bug hunting. I will give you a specific source code from pytorch and a list of function that is vulnerable. please:
 1. SUMMARY: summarize the function's usage
 2. EXAMPLE: give an example of how to trigger the target_line in using normal pytorch code without touch the inner API. the python code must only contain one pytorch module
-3. potential API: list the potential api under torch.nn and torch.functional.
+3. potential API: list the potential api that related to the target_line under `torch.nn`/`torch.nn.functional`/`torch.linalg`/`torch.fft`.
 Here is your example output:
 ```summary
 The BatchLayernormFusion class handles fusing multiple layer normalization operations in PyTorch graphs. The vulnerable line checks that all epsilon values used in the layer norm operations are equal before fusing them. This is important because:
@@ -92,13 +98,13 @@ When it's your turn, please output the summary,example code and the pentential a
 # Thread-local storage for LLM clients
 thread_local = threading.local()
 
-def get_thread_llm(model):
+def get_thread_llm(model:str):
     """Get or create an LLM client for the current thread"""
     if not hasattr(thread_local, "llm"):
         thread_local.llm = get_openai(model)
     return thread_local.llm
 
-def process_prompt_item(prompt_item, output_p, model):
+def process_prompt_item(prompt_item: UnifiedPrompt, output_p:Path, model:str):
     """Process a single prompt item and save the results"""
     file_name = prompt_item["file_name"]
     func_name = prompt_item["func_name"]
@@ -176,7 +182,7 @@ def main(input_dir: str, output_dir: str, model: str, max_workers: int):
     logger.info(f"Found {len(file_level_prompts)} file-level prompts")
 
     # Create a unified list of all file_level_prompts and func_level_prompts combinations
-    unified_prompts = []
+    unified_prompts:List[UnifiedPrompt] = []
     for file_idx, file_prompt in enumerate(file_level_prompts):
         file_name = file_level_names[file_idx]
         for func_name, func_info in file_prompt.items():

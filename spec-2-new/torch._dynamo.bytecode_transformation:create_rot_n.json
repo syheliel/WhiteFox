@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe create_rot_n function generates bytecode instructions for rotating the top n items on the Python stack. The vulnerable line checks Python version compatibility for rotation operations with n >= 5. This is important because:\n1. Python versions before 3.10 don't support ROT_N for n >= 5\n2. The function raises an AttributeError for unsupported rotations\n3. Missing version check could lead to incorrect bytecode generation\n4. The function provides alternative implementations for different Python versions\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass StackRotator(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would trigger create_rot_n with n=5 in Python bytecode\n        a, b, c, d, e = x[0], x[1], x[2], x[3], x[4]\n        return e, d, c, b, a  # This rotation would use ROT_N in Python >= 3.10\n```\n\n```yaml\n- nn.Module\n- torch.Tensor.__getitem__\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass StackRotator(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would trigger create_rot_n with n=5 in Python bytecode\n        a, b, c, d, e = x[0], x[1], x[2], x[3], x[4]\n        return e, d, c, b, a  # This rotation would use ROT_N in Python >= 3.10\n```\n\n```yaml\n- nn.Module\n- torch.Tensor.__getitem__\n",
+    "summary": "\nThe create_rot_n function generates bytecode instructions for rotating the top n items on the Python stack. The vulnerable line checks Python version compatibility for rotation operations with n >= 5, which were not supported before Python 3.10. This is important because:\n1. Stack rotation is used in bytecode generation for various operations\n2. Python versions before 3.10 had limited rotation capabilities\n3. Attempting to rotate 5+ items on older Python versions would fail\n4. The function raises an AttributeError for unsupported cases\n",
+    "python_code": "\nimport torch\n\ndef rotate_stack(n):\n    # This will trigger the version check in create_rot_n\n    # On Python < 3.10 with n >= 5, it will raise AttributeError\n    return torch.nn.functional.pad(torch.randn(n), (0,0)).tolist()\n\nrotate_stack(5)  # Will raise error on Python < 3.10\n",
     "api": [
-        "nn.Module",
-        "torch.Tensor.__getitem__"
+        "torch.nn.functional.pad",
+        "torch.randn",
+        "torch.tensor.tolist"
     ]
 }

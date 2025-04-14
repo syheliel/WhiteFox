@@ -1,0 +1,29 @@
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:461 - OUT_DIR: code-3-new
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:462 - RESULT_DIR: result-4-new/code-3-new-cpu
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:463 - TEST_DIR: result-4-new/code-3-new-cpu/test
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:464 - TEST_LOG_PATH: result-4-new/code-3-new-cpu/test/tested.log
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:465 - TEMP_LOG_PATH: result-4-new/code-3-new-cpu/test/atemp.py
+2025-04-13 12:28:04 | INFO     | main | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:466 - CRASH_LOG_PATH: result-4-new/code-3-new-cpu/test/crash.log
+2025-04-13 12:28:05 | INFO     | core_loop | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:394 - all tasks:
+2025-04-13 12:28:05 | INFO     | core_loop | /lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py:395 - read tested from: result-4-new/code-3-new-cpu/test/tested.log
+Traceback (most recent call last):
+  File "/lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py", line 496, in <module>
+    main()
+  File "/lustre/home/2201213135/software/miniconda3/lib/python3.12/site-packages/click/core.py", line 1161, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lustre/home/2201213135/software/miniconda3/lib/python3.12/site-packages/click/core.py", line 1082, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/lustre/home/2201213135/software/miniconda3/lib/python3.12/site-packages/click/core.py", line 1443, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lustre/home/2201213135/software/miniconda3/lib/python3.12/site-packages/click/core.py", line 788, in invoke
+    return __callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py", line 492, in main
+    core_loop(args)
+  File "/lustre/home/2201213135/WhiteFox/./torch-exec/template_exec.py", line 405, in core_loop
+    if filename in tested:
+                   ^^^^^^
+UnboundLocalError: cannot access local variable 'tested' where it is not associated with a value

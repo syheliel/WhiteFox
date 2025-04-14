@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe add_push_null function handles adding PUSH_NULL instructions for callable objects in Python bytecode generation. The vulnerable line checks for Python 3.13+ to determine the correct placement of PUSH_NULL instructions. This is important because:\n1. Different Python versions handle NULL pushing differently\n2. Incorrect NULL placement could lead to stack corruption\n3. The function modifies instruction arguments for version-specific optimizations\n4. Missing proper version checks could result in incorrect bytecode generation\n```\n\n```python\nimport torch\n\ndef generate_callable():\n    def my_func(x):\n        return x * 2\n    \n    # This will trigger add_push_null when compiled\n    compiled = torch.compile(my_func)\n    return compiled(torch.tensor([1.0, 2.0]))\n\nresult = generate_callable()\n```\n\n```yaml\n- torch.compile\n- torch.tensor\n",
-    "python_code": "\nimport torch\n\ndef generate_callable():\n    def my_func(x):\n        return x * 2\n    \n    # This will trigger add_push_null when compiled\n    compiled = torch.compile(my_func)\n    return compiled(torch.tensor([1.0, 2.0]))\n\nresult = generate_callable()\n```\n\n```yaml\n- torch.compile\n- torch.tensor\n",
+    "summary": "\nThe add_push_null function handles adding PUSH_NULL instructions for Python bytecode generation, with version-specific behavior. The vulnerable line checks for Python 3.13+ to determine the placement of PUSH_NULL instructions. This is important because:\n1. Different Python versions handle NULL pushing differently\n2. Incorrect version handling could lead to wrong bytecode generation\n3. The function needs to maintain stack consistency across versions\n4. Missing edge cases in version checks could cause runtime errors\n",
+    "python_code": "\nimport torch\n\ndef generate_call():\n    # This will trigger add_push_null when generating bytecode\n    def func(x):\n        return torch.relu(x)\n    \n    return func\n\nf = generate_call()\nf(torch.tensor([-1.0, 0.0, 1.0]))\n",
     "api": [
-        "torch.compile",
-        "torch.tensor"
+        "torch.nn.functional.relu",
+        "torch.nn.Module.__call__",
+        "torch.autograd.Function.__call__"
     ]
 }

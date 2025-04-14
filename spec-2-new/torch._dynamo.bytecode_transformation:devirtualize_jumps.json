@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe devirtualize_jumps function handles converting virtualized jump targets back to actual bytecode offsets in PyTorch's bytecode manipulation utilities. The vulnerable line checks if an instruction is a jump operation before processing it. This is important because:\n1. Jump instructions require special handling due to their control flow nature\n2. Incorrect jump target resolution could lead to malformed bytecode\n3. The function needs to properly handle both absolute and relative jumps\n4. Missing validation could result in incorrect jump targets or corrupted bytecode\n```\n\n```python\nimport torch\n\ndef test_jump():\n    x = torch.tensor([1, 2, 3])\n    y = torch.tensor([4, 5, 6])\n    if x.sum() > y.sum():  # This will generate jump instructions\n        return x\n    else:\n        return y\n\n# Compile the function to trigger jump instruction handling\ncompiled = torch.compile(test_jump)\ncompiled()\n```\n\n```yaml\n- torch.compile\n- torch.tensor\n- Tensor.sum\n",
-    "python_code": "\nimport torch\n\ndef test_jump():\n    x = torch.tensor([1, 2, 3])\n    y = torch.tensor([4, 5, 6])\n    if x.sum() > y.sum():  # This will generate jump instructions\n        return x\n    else:\n        return y\n\n# Compile the function to trigger jump instruction handling\ncompiled = torch.compile(test_jump)\ncompiled()\n```\n\n```yaml\n- torch.compile\n- torch.tensor\n- Tensor.sum\n",
+    "summary": "\nThe devirtualize_jumps function handles converting virtualized jump targets back to concrete bytecode offsets in PyTorch's bytecode transformation utilities. The vulnerable line checks if an instruction is a jump operation before processing it. This is important because:\n1. Jump instructions require special handling of their target offsets\n2. The function needs to distinguish between absolute and relative jumps\n3. Python version differences affect jump instruction handling\n4. Incorrect jump target resolution could lead to malformed bytecode\n",
+    "python_code": "\nimport torch\n\ndef example_function(x):\n    if x > 0:\n        return x * 2\n    else:\n        return x * 3\n\ncompiled_fn = torch.compile(example_function)\nresult = compiled_fn(torch.tensor(5))\n",
     "api": [
         "torch.compile",
-        "torch.tensor",
-        "Tensor.sum"
+        "torch.jit.script",
+        "torch.jit.trace"
     ]
 }

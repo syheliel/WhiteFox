@@ -1,11 +1,10 @@
 {
-    "summary": "\nThe evaluate_static_shape function in SizeVarAllocator is used to convert symbolic expressions to concrete integer shapes while adding appropriate guards. The vulnerable line performs a forced integer conversion of the right-hand side value which could lose precision when dealing with large floating-point numbers or complex symbolic expressions. This is important because:\n1. Shape calculations in PyTorch must be precise integers\n2. Forced conversion could silently truncate fractional values\n3. Incorrect shape values could lead to memory corruption or incorrect computations\n4. The function is used in critical shape calculation paths\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ShapeTest(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This will trigger evaluate_static_shape internally\n        # when processing the reshape operation\n        return x.reshape([x.size(0), -1])\n\n# Create tensor with shape that would go through evaluate_static_shape\nx = torch.randn(10000000000000000000, 1)\nmodel = ShapeTest()\nout = model(x)  # This may trigger precision loss in evaluate_static_shape\n```\n\n```yaml\n- nn.Module.size\n- nn.Module.reshape\n- nn.Module.view\n- nn.Module.expand\n- nn.Module.permute\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ShapeTest(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This will trigger evaluate_static_shape internally\n        # when processing the reshape operation\n        return x.reshape([x.size(0), -1])\n\n# Create tensor with shape that would go through evaluate_static_shape\nx = torch.randn(10000000000000000000, 1)\nmodel = ShapeTest()\nout = model(x)  # This may trigger precision loss in evaluate_static_shape\n```\n\n```yaml\n- nn.Module.size\n- nn.Module.reshape\n- nn.Module.view\n- nn.Module.expand\n- nn.Module.permute\n",
+    "summary": "\nThe evaluate_static_shape function in SizeVarAllocator is used to convert symbolic shape expressions into concrete integer values. The vulnerable line performs a direct integer conversion which may lose precision when:\n1. The input expression is a large integer that exceeds Python's int precision\n2. The symbolic expression contains floating point components\n3. The conversion truncates decimal values\n4. The input is a complex expression that should be evaluated symbolically first\n",
+    "python_code": "\nimport torch\n\ndef test_shape_conversion():\n    # Create a tensor with a large shape that could cause precision issues\n    large_dim = 2**60  # Very large dimension\n    x = torch.randn(large_dim, 1)\n    # This will trigger evaluate_static_shape internally during shape validation\n    y = x.view(-1)  # Reshape operation forces static shape evaluation\n    return y\n\ntest_shape_conversion()\n",
     "api": [
-        "nn.Module.size",
-        "nn.Module.reshape",
-        "nn.Module.view",
-        "nn.Module.expand",
-        "nn.Module.permute"
+        "torch.Tensor.view",
+        "torch.Tensor.reshape",
+        "torch.nn.functional.interpolate",
+        "torch.nn.AdaptiveAvgPool2d"
     ]
 }

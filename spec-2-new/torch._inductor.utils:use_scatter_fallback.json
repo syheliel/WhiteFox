@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe use_scatter_fallback function determines whether to use a fallback implementation for scatter operations based on various conditions. The vulnerable line checks if the operation is a scatter_reduce variant without a reduction type specified. This is important because:\n1. Scatter operations have different performance characteristics\n2. Fallback decisions affect numerical accuracy\n3. Incorrect fallback selection could lead to performance degradation\n4. The logic must correctly handle all scatter operation variants\n```\n\n```python\nimport torch\n\ndef trigger_scatter_fallback():\n    x = torch.ones(5, 5)\n    indices = torch.tensor([[0, 1, 2], [0, 1, 2]])\n    updates = torch.randn(3)\n    \n    # This will trigger the scatter_reduce_ path with no reduction type\n    x.scatter_(0, indices, updates)\n    \n    # This will trigger the scatter_reduce path with sum reduction\n    torch.scatter_reduce(x, 0, indices, updates, reduce='sum')\n\ntrigger_scatter_fallback()\n```\n\n```yaml\n- torch.scatter\n- torch.scatter_\n- torch.scatter_reduce\n- torch.scatter_reduce_\n",
-    "python_code": "\nimport torch\n\ndef trigger_scatter_fallback():\n    x = torch.ones(5, 5)\n    indices = torch.tensor([[0, 1, 2], [0, 1, 2]])\n    updates = torch.randn(3)\n    \n    # This will trigger the scatter_reduce_ path with no reduction type\n    x.scatter_(0, indices, updates)\n    \n    # This will trigger the scatter_reduce path with sum reduction\n    torch.scatter_reduce(x, 0, indices, updates, reduce='sum')\n\ntrigger_scatter_fallback()\n```\n\n```yaml\n- torch.scatter\n- torch.scatter_\n- torch.scatter_reduce\n- torch.scatter_reduce_\n",
+    "summary": "\nThe use_scatter_fallback function determines whether to use a fallback implementation for scatter operations based on various conditions. The vulnerable line checks if the operation is a scatter_reduce variant and if no reduction type is specified. This is important because:\n1. Scatter operations have different performance characteristics\n2. Fallback implementations may be slower or incorrect\n3. The conditional logic must correctly identify all cases requiring fallback\n4. Incorrect fallback decisions could lead to performance degradation or wrong results\n",
+    "python_code": "\nimport torch\n\nx = torch.ones(5, 5)\nsrc = torch.tensor([[1, 2, 3, 4, 5]])\nindex = torch.tensor([[0, 1, 2, 3, 4]])\n\n# This would trigger the target line\ntorch.ops.aten.scatter_reduce_(x, 0, index, src, reduce=\"sum\")\n",
     "api": [
-        "torch.scatter",
-        "torch.scatter_",
-        "torch.scatter_reduce",
-        "torch.scatter_reduce_"
+        "torch.ops.aten.scatter_",
+        "torch.ops.aten.scatter",
+        "torch.ops.aten.scatter_reduce_",
+        "torch.ops.aten.scatter_reduce"
     ]
 }

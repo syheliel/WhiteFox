@@ -1,12 +1,18 @@
 {
-    "summary": "\nThe ConstructorMoverPass class handles moving tensor constructors from CPU to GPU in PyTorch graphs. The vulnerable line initiates this movement process. This is important because:\n1. Moving constructors to GPU can improve performance by reducing CPU-GPU transfers\n2. The pass must carefully validate which constructors can be safely moved\n3. Incorrect movement could lead to device mismatch errors\n4. The pass maintains correctness by tracking dependencies between operations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # CPU constructor that could be moved to GPU\n        ones = torch.ones(10, device='cpu')\n        x = self.linear(x)\n        return x + ones  # This addition would trigger the constructor movement\n```\n\n```yaml\n- nn.Linear\n- torch.ones\n- torch.zeros\n- torch.empty\n- torch.rand\n- torch.randn\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # CPU constructor that could be moved to GPU\n        ones = torch.ones(10, device='cpu')\n        x = self.linear(x)\n        return x + ones  # This addition would trigger the constructor movement\n```\n\n```yaml\n- nn.Linear\n- torch.ones\n- torch.zeros\n- torch.empty\n- torch.rand\n- torch.randn\n",
+    "summary": "\nThe move_constructors_to_gpu function is responsible for moving tensor constructors from CPU to GPU when safe. The vulnerable line calls ConstructorMoverPass which:\n1. Identifies CPU tensor constructors in the graph\n2. Determines if they can be safely moved to GPU\n3. Updates their device placement if safe\n4. Handles dependencies between operations\n5. Prevents unsafe moves that could break graph execution\nThe function is part of PyTorch's graph optimization passes that aim to improve performance by moving operations to GPU.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithCPUConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # CPU tensor constructor\n        ones = torch.ones(10, device='cpu')\n        x = self.linear(x)\n        return x + ones  # This will trigger the constructor move optimization\n",
     "api": [
-        "nn.Linear",
+        "nn.Module",
         "torch.ones",
         "torch.zeros",
         "torch.empty",
+        "torch.full",
+        "torch.arange",
+        "torch.linspace",
+        "torch.logspace",
+        "torch.eye",
         "torch.rand",
-        "torch.randn"
+        "torch.randn",
+        "torch.randint"
     ]
 }

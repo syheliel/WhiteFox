@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe dtype_from_inputs function is used to infer the data type (dtype) from example inputs provided to a PyTorch model. The vulnerable line iterates through inputs to find one with a dtype attribute. The issue is:\n1. No handling for empty input lists\n2. No fallback when no inputs have dtype attribute\n3. Could lead to None being returned unexpectedly\n4. May cause issues in backends expecting valid dtype\n```\n\n```python\nimport torch\n\n# Create example inputs without dtype attribute\nexample_inputs = [torch.tensor(1), \"string_input\", {\"key\": \"value\"}]\n\n# This will fail to find dtype and return None\ndtype = torch._dynamo.utils.dtype_from_inputs(example_inputs)\nprint(dtype)  # None\n```\n\n```yaml\n- torch.tensor\n- torch.Tensor\n- torch.nn.Module.forward\n- torch.functional.tensor\n",
-    "python_code": "\nimport torch\n\n# Create example inputs without dtype attribute\nexample_inputs = [torch.tensor(1), \"string_input\", {\"key\": \"value\"}]\n\n# This will fail to find dtype and return None\ndtype = torch._dynamo.utils.dtype_from_inputs(example_inputs)\nprint(dtype)  # None\n```\n\n```yaml\n- torch.tensor\n- torch.Tensor\n- torch.nn.Module.forward\n- torch.functional.tensor\n",
+    "summary": "\nThe dtype_from_inputs function is used to infer the data type (dtype) from example inputs provided to a PyTorch model. The vulnerable line iterates through inputs to find one with a dtype attribute. The issue is:\n1. No handling for empty input lists\n2. No fallback when no inputs have dtype attribute\n3. Could lead to None being returned unexpectedly\n4. Missing dtype validation could cause downstream issues\n",
+    "python_code": "\nimport torch\n\n# Example where this could be triggered\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        return x\n\nmodel = SimpleModel()\ninputs = [torch.tensor(1.0), \"string_input\"]  # Mixed types including non-tensor\ndtype = torch.jit._dtype_from_inputs(inputs)  # Would hit vulnerable line\n",
     "api": [
         "torch.tensor",
-        "torch.Tensor",
-        "torch.nn.Module.forward",
-        "torch.functional.tensor"
+        "torch.Tensor.dtype",
+        "torch.jit._dtype_from_inputs"
     ]
 }

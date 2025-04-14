@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe _detect_cycles function is used to detect cycles in a PyTorch computational graph. The vulnerable line involves appending nodes to a pending queue for cycle detection. The issues are:\n1. Potential infinite loop if the graph contains malformed nodes or unexpected structure\n2. Lack of node type validation before cycle detection\n3. The function assumes well-formed graph inputs\n4. Missing safeguards could lead to infinite processing or incorrect cycle detection\n```\n\n```python\nimport torch\nfrom torch.fx import symbolic_trace\n\nclass CyclicModel(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = torch.nn.Linear(10, 10)\n    \n    def forward(self, x):\n        x = self.linear(x)\n        return x\n\nmodel = CyclicModel()\ntraced = symbolic_trace(model)\n# This would trigger cycle detection internally\n```\n\n```yaml\n- torch.fx.symbolic_trace\n- torch.nn.Module\n- torch.nn.Linear\n",
-    "python_code": "\nimport torch\nfrom torch.fx import symbolic_trace\n\nclass CyclicModel(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = torch.nn.Linear(10, 10)\n    \n    def forward(self, x):\n        x = self.linear(x)\n        return x\n\nmodel = CyclicModel()\ntraced = symbolic_trace(model)\n# This would trigger cycle detection internally\n```\n\n```yaml\n- torch.fx.symbolic_trace\n- torch.nn.Module\n- torch.nn.Linear\n",
+    "summary": "\nThe _detect_cycles function performs cycle detection in PyTorch computational graphs. The vulnerable line adds nodes to a pending queue for cycle checking. Key points:\n1. It traverses graph nodes starting from placeholders\n2. Uses depth-first search to detect cycles\n3. Vulnerable to infinite loops if graph contains malformed connections\n4. Missing node type validation could lead to incorrect cycle detection\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass CyclicModel(nn.Module):\n    def __init__(self):\n        super(CyclicModel, self).__init__()\n        self.linear1 = nn.Linear(10, 10)\n        self.linear2 = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Create a cyclic connection\n        x1 = self.linear1(x)\n        x2 = self.linear2(x1)\n        x1 = x1 + x2  # This creates a cycle\n        return x1\n\nmodel = CyclicModel()\ntraced = torch.fx.symbolic_trace(model)\n# This would trigger the cycle detection when analyzing the graph\n",
     "api": [
         "torch.fx.symbolic_trace",
-        "torch.nn.Module",
-        "torch.nn.Linear"
+        "torch.nn.Linear",
+        "torch.fx.Graph"
     ]
 }

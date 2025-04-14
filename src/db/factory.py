@@ -12,8 +12,9 @@ from pathlib import Path
 from hashlib import md5
 from chromadb.api.types import GetResult, QueryResult
 from loguru import logger
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
+from numpy.typing import NDArray
+from concurrent.futures import ProcessPoolExecutor, as_completed, Future
+from typing import Dict, Any, Tuple
 class EmbeddingType(Enum):
     VOYAGE = "voyage"
     HUGGINGFACE = "huggingface"
@@ -26,7 +27,7 @@ class BaseVectorDB(ABC):
     """Base class for vector database implementations."""
     
     @abstractmethod
-    def add(self, ids:List[str], documents:List[str], embeddings:np.ndarray, metadatas:Optional[List[dict]]=None):
+    def add(self, ids:List[str], documents:List[str], embeddings:NDArray[np.float32], metadatas:Optional[List[Dict[str,Any]]]=None):
         """Add documents to the vector database."""
         pass
     
@@ -36,12 +37,12 @@ class BaseVectorDB(ABC):
         pass
     
     @abstractmethod
-    def get(self, ids=None) -> GetResult:
+    def get(self, ids:Optional[List[str]]=None) -> GetResult:
         """Get documents from the vector database."""
         pass
     
     @abstractmethod
-    def query_by_emb(self, query_embeddings, n_results=10) -> QueryResult:
+    def query_by_emb(self, query_embeddings:NDArray[np.float32], n_results:int=10) -> QueryResult:
         """Query the vector database."""
         pass
 
@@ -51,12 +52,12 @@ class Metadata(TypedDict):
 class ChromaVectorDB(BaseVectorDB):
     """ChromaDB implementation of vector database."""
     
-    def __init__(self, collection_name: str = CHROMADB_COLLECTION, db_path=CHROMADB_PATH, embedding_type:EmbeddingType=EmbeddingType.VOYAGE):
+    def __init__(self, collection_name: str = CHROMADB_COLLECTION, db_path:Path=CHROMADB_PATH, embedding_type:EmbeddingType=EmbeddingType.VOYAGE):
         self.client = chromadb.PersistentClient(path=str(db_path))
         self.collection = self.client.get_or_create_collection(collection_name)
         self.embedding = EmbeddingFactory.create_embedding(embedding_type)
     
-    def add(self, ids:List[str], documents:List[str], embeddings:np.ndarray, metadatas:Optional[List[Metadata]]=None): # type: ignore
+    def add(self, ids:List[str], documents:List[str], embeddings:NDArray[np.float32], metadatas:Optional[List[Metadata]]=None): # type: ignore
         """Add documents to the vector database."""
         logger.info(f"Adding {len(documents)} documents to the {self.collection.name} vector database.")
         return self.collection.add(ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas) # type: ignore
@@ -73,13 +74,15 @@ class ChromaVectorDB(BaseVectorDB):
         """Add documents to the vector database by file path in parallel batches."""
         with ProcessPoolExecutor(max_workers=8) as executor:
             # Process files in parallel to get texts and embeddings
-            future_to_file = {
-                executor.submit(lambda p: (p, p.read_text()), path): path 
-                for path in file_path
-            }
+            future_to_file:Dict[Future[Tuple[Path, str]], Path] = {}
+            for path in file_path:
+                def process_file(p: Path) -> Tuple[Path, str]:
+                    return (p, p.read_text())
+                future = executor.submit(process_file, path)
+                future_to_file[future] = path
             
-            texts = []
-            paths = []
+            texts:List[str] = []
+            paths:List[Path] = []
             for future in as_completed(future_to_file):
                 try:
                     path, text = future.result()
@@ -99,7 +102,7 @@ class ChromaVectorDB(BaseVectorDB):
             # Add to vector DB
             self.add(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
     
-    def get(self, ids=None) -> GetResult:
+    def get(self, ids: Optional[List[str]] = None) -> GetResult:
         """Get documents from the vector database."""
         result = self.collection.get(ids=ids)
         # Handle empty collection case
@@ -111,11 +114,11 @@ class ChromaVectorDB(BaseVectorDB):
         """Calculate the id of the document."""
         return file_path.name + md5(file_path.read_text().encode()).hexdigest()
     
-    def query_by_emb(self, query_embeddings, n_results=10):
+    def query_by_emb(self, query_embeddings:NDArray[np.float32], n_results:int=10) -> QueryResult:
         """Query the vector database."""
         return self.collection.query(query_embeddings=query_embeddings, n_results=n_results)
     
-    def query_by_text(self, query_text, n_results=10):
+    def query_by_text(self, query_text:str, n_results:int=10) -> QueryResult:
         """Query the vector database by text."""
         return self.collection.query(query_texts=[query_text], n_results=n_results)
 

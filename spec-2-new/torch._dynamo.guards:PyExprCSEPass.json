@@ -1,9 +1,11 @@
 {
-    "summary": "\nThe PyExprCSEPass class performs common sub-expression elimination (CSE) on Python expressions during guard generation. The vulnerable line uses ast.unparse() which can be expensive for large AST nodes. This is important because:\n1. AST unparsing is used to count and replace repeated sub-expressions\n2. Large expressions could cause performance issues during guard generation\n3. The operation is quadratic on AST depth due to repeated unparsing\n4. This affects guard generation time during Dynamo tracing\n```\n\n```python\nimport torch\n\nclass LargeExpressionModule(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.a = torch.nn.Parameter(torch.randn(10))\n        self.b = torch.nn.Parameter(torch.randn(10))\n        self.c = torch.nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # Large expression that would generate deep AST\n        y = (self.a + self.b) * (self.c + x) / (self.a - self.b) ** (self.c - x)\n        return y.mean()\n\nmodel = LargeExpressionModule()\nopt_model = torch.compile(model)\nx = torch.randn(10)\nopt_model(x)  # Triggers guard generation with potential performance issue\n```\n\n```yaml\n- torch.compile\n- torch.nn.Module\n- torch.nn.Parameter\n",
-    "python_code": "\nimport torch\n\nclass LargeExpressionModule(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.a = torch.nn.Parameter(torch.randn(10))\n        self.b = torch.nn.Parameter(torch.randn(10))\n        self.c = torch.nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # Large expression that would generate deep AST\n        y = (self.a + self.b) * (self.c + x) / (self.a - self.b) ** (self.c - x)\n        return y.mean()\n\nmodel = LargeExpressionModule()\nopt_model = torch.compile(model)\nx = torch.randn(10)\nopt_model(x)  # Triggers guard generation with potential performance issue\n```\n\n```yaml\n- torch.compile\n- torch.nn.Module\n- torch.nn.Parameter\n",
+    "summary": "\nThe PyExprCSEPass class performs common sub-expression elimination (CSE) on Python expressions during guard generation. The vulnerable line involves unparsing AST nodes which could be expensive for large expressions. This is important because:\n1. AST unparsing is done for every sub-expression during CSE\n2. Large expressions could cause performance issues\n3. The operation is quadratic on AST depth\n4. This happens during guard generation which is performance critical\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithLargeExpr(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10, 10))\n        \n    def forward(self, x):\n        # Large expression that would trigger expensive AST unparsing\n        y = (x @ self.weight.T).sum() * (x @ self.weight.T).sum() * (x @ self.weight.T).sum()\n        return y\n",
     "api": [
-        "torch.compile",
-        "torch.nn.Module",
-        "torch.nn.Parameter"
+        "nn.Module",
+        "nn.Parameter",
+        "torch.randn",
+        "torch.Tensor.T",
+        "torch.Tensor.sum"
     ]
 }

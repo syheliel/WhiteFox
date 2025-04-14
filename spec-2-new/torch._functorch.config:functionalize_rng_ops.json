@@ -1,11 +1,12 @@
 {
-    "summary": "\nThe functionalize_rng_ops flag controls whether PyTorch converts random number generation (RNG) operations to their functional equivalents. The vulnerability lies in:\n1. Only CUDA RNG ops are functionalized by default\n2. Non-CUDA RNG ops may have different precision characteristics\n3. This inconsistency could lead to unexpected numerical results\n4. The flag doesn't cover all RNG operation types uniformly\n```\n\n```python\nimport torch\n\n# Create a tensor and apply dropout with different backends\nx = torch.randn(10, device='cpu')\ny = torch.nn.functional.dropout(x, p=0.5)  # CPU RNG not functionalized\nz = torch.nn.functional.dropout(x.cuda(), p=0.5)  # CUDA RNG functionalized if flag set\n```\n\n```yaml\n- torch.randn\n- torch.nn.functional.dropout\n- torch.nn.functional.rrelu\n- torch.nn.init.uniform_\n- torch.nn.init.normal_\n",
-    "python_code": "\nimport torch\n\n# Create a tensor and apply dropout with different backends\nx = torch.randn(10, device='cpu')\ny = torch.nn.functional.dropout(x, p=0.5)  # CPU RNG not functionalized\nz = torch.nn.functional.dropout(x.cuda(), p=0.5)  # CUDA RNG functionalized if flag set\n```\n\n```yaml\n- torch.randn\n- torch.nn.functional.dropout\n- torch.nn.functional.rrelu\n- torch.nn.init.uniform_\n- torch.nn.init.normal_\n",
+    "summary": "\nThe functionalize_rng_ops flag controls whether PyTorch's random number generator (RNG) operations are converted to their functional equivalents. The vulnerability lies in:\n1. Only CUDA RNG ops are functionalized while other RNG ops remain unchanged\n2. This inconsistency can lead to precision issues when mixing functional and non-functional RNG ops\n3. The flag being False by default means users might not be aware of potential precision discrepancies\n4. Missing functionalization for non-CUDA RNG ops could affect reproducibility\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass RNGModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.dropout = nn.Dropout(p=0.5)\n        \n    def forward(self, x):\n        # This will use non-functional RNG when functionalize_rng_ops=False\n        return self.dropout(x)\n\nmodel = RNGModel()\ninput = torch.randn(10)\noutput = model(input)  # Triggers RNG ops that may not be functionalized\n",
     "api": [
-        "torch.randn",
-        "torch.nn.functional.dropout",
-        "torch.nn.functional.rrelu",
-        "torch.nn.init.uniform_",
-        "torch.nn.init.normal_"
+        "nn.Dropout",
+        "nn.Dropout2d",
+        "nn.Dropout3d",
+        "nn.RNN",
+        "nn.LSTM",
+        "nn.GRU"
     ]
 }

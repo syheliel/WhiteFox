@@ -25,7 +25,8 @@ dependencies = [
     "langchain-community (>=0.3.21,<0.4.0)",
     "langchain-voyageai (>=0.1.4,<0.2.0)",
     "tlparse (>=0.3.39,<0.4.0)",
-    "black (>=25.1.0,<26.0.0)"
+    "black (>=25.1.0,<26.0.0)",
+    "modelscope (>=1.25.0,<2.0.0)"
 ]
 
 [tool.poetry.scripts]

@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe aot_function is a PyTorch API that traces and compiles forward/backward graphs ahead of time. The vulnerable line checks for cached compilation results, which can lead to incorrect behavior if:\n1. Input shapes/types change between calls but cached results are reused\n2. Different inputs produce same flattened argument structure\n3. Dynamic behavior is expected but cached static graph is used\n4. Mutations between calls affect subsequent computations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\ndef fn(x):\n    return x * 2\n\n# First call with float32 tensor\naot_fn = torch._functorch.aot_function(fn, lambda gm, _: gm)\nx1 = torch.randn(3, dtype=torch.float32)\nout1 = aot_fn(x1)\n\n# Second call with int64 tensor - may incorrectly reuse cached compilation\nx2 = torch.randint(0, 10, (3,), dtype=torch.int64)\nout2 = aot_fn(x2)  # Potential incorrect behavior\n```\n\n```yaml\n- nn.Module\n- torch.compile\n- torch.func.functional_call\n- torch.autograd.Function\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\ndef fn(x):\n    return x * 2\n\n# First call with float32 tensor\naot_fn = torch._functorch.aot_function(fn, lambda gm, _: gm)\nx1 = torch.randn(3, dtype=torch.float32)\nout1 = aot_fn(x1)\n\n# Second call with int64 tensor - may incorrectly reuse cached compilation\nx2 = torch.randint(0, 10, (3,), dtype=torch.int64)\nout2 = aot_fn(x2)  # Potential incorrect behavior\n```\n\n```yaml\n- nn.Module\n- torch.compile\n- torch.func.functional_call\n- torch.autograd.Function\n",
+    "summary": "\nThe aot_function implements a caching mechanism that stores compiled results to avoid recompilation. The vulnerable line checks if cached results exist before recompiling. This can lead to issues because:\n1. The cache is not invalidated when input shapes/types change\n2. Subsequent calls with different inputs may incorrectly reuse cached results\n3. No validation is done to ensure cached results match current inputs\n4. Missing cache invalidation could lead to incorrect computations\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\ndef my_function(x):\n    return x * 2\n\ncompiled_fn = torch._functorch.aot_function(my_function, fw_compiler=lambda gm, _: gm)\n\n# First call compiles and caches\nx1 = torch.randn(3)\nout1 = compiled_fn(x1)\n\n# Second call with different input shape reuses cached result incorrectly  \nx2 = torch.randn(5)  # Different shape but cache is reused\nout2 = compiled_fn(x2)  # Potential incorrect results\n",
     "api": [
         "nn.Module",
         "torch.compile",
-        "torch.func.functional_call",
-        "torch.autograd.Function"
+        "torch.func",
+        "torch._functorch"
     ]
 }

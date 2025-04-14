@@ -1,12 +1,11 @@
 {
-    "summary": "\nThe BatchPointwiseOpsPostGradFusion class handles fusing pointwise operations (like tanh, sigmoid, relu) in PyTorch graphs during post-grad optimization. The vulnerable line updates the metadata value after fusion, which is important because:\n1. It maintains correct type information for the fused operation\n2. Incorrect type inference could lead to downstream compilation errors\n3. The fusion assumes consistent input/output types across operations\n4. Missing or incorrect type validation could lead to runtime errors\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOpsModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        x = self.linear(x)\n        x = torch.tanh(x)  # This could be fused with other tanh ops\n        x = torch.sigmoid(x)  # This could be fused with other sigmoid ops\n        return x\n\nmodel = PointwiseOpsModel()\ninput = torch.randn(1, 10)\noutput = model(input)\n```\n\n```yaml\n- nn.Linear\n- torch.tanh\n- torch.sigmoid\n- torch.relu\n- torch.add\n- torch.mul\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOpsModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        x = self.linear(x)\n        x = torch.tanh(x)  # This could be fused with other tanh ops\n        x = torch.sigmoid(x)  # This could be fused with other sigmoid ops\n        return x\n\nmodel = PointwiseOpsModel()\ninput = torch.randn(1, 10)\noutput = model(input)\n```\n\n```yaml\n- nn.Linear\n- torch.tanh\n- torch.sigmoid\n- torch.relu\n- torch.add\n- torch.mul\n",
+    "summary": "\nThe BatchPointwiseOpsPostGradFusion class handles fusing pointwise operations (like add, mul, etc.) in PyTorch graphs during the post-grad pass. The vulnerable line assigns metadata values to fused operations, which is important because:\n1. It maintains correct type information through graph transformations\n2. Incorrect type inference could lead to runtime errors\n3. The fusion assumes consistent metadata across operations\n4. Missing or incorrect type information could cause optimization failures\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOps(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.relu = nn.ReLU()\n    \n    def forward(self, x):\n        x = torch.add(x, x)\n        x = torch.mul(x, x)\n        x = self.relu(x)\n        return x\n",
     "api": [
-        "nn.Linear",
-        "torch.tanh",
-        "torch.sigmoid",
-        "torch.relu",
+        "nn.ReLU",
         "torch.add",
-        "torch.mul"
+        "torch.mul",
+        "torch.tanh",
+        "torch.sigmoid"
     ]
 }

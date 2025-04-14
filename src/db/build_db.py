@@ -1,7 +1,7 @@
 from langchain_core.documents import Document
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 from src.conf import TORCH_BASE
-from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType
+from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType, BaseEmbedding, BaseVectorDB
 import click
 from loguru import logger
 from pathlib import Path
@@ -9,16 +9,16 @@ from hashlib import md5
 from tqdm import tqdm
 from typing import List
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import numpy as np
-
+from typing import Set
+from concurrent.futures import Future
 
 def get_id(chunk: Document) -> str:
-    return chunk.metadata["source"] + md5(chunk.page_content.encode()).hexdigest()
+    return chunk.metadata["source"] + md5(chunk.page_content.encode()).hexdigest() # type: ignore
 
 
 def unique_chunks(chunks: List[Document]) -> List[Document]:
-    all_ids = set()
-    unique_chunks = []
+    all_ids: Set[str] = set()
+    unique_chunks: List[Document] = []
     for chunk in chunks:
         if get_id(chunk) not in all_ids:
             unique_chunks.append(chunk)
@@ -34,24 +34,25 @@ def list_source_files(root: Path, extensions: List[str]) -> List[Path]:
     return source_file_paths
 
 
-def process_chunk_batch(chunks: List[Document], embedding, vector_db, batch_size: int):
+def process_chunk_batch(chunks: List[Document], embedding:BaseEmbedding, vector_db:BaseVectorDB, batch_size: int):
     """Process a batch of chunks in parallel."""
     embeddings = embedding.embed_documents([chunk.page_content for chunk in chunks])
     vector_db.add(
         ids=[get_id(chunk) for chunk in chunks],
         documents=[chunk.page_content for chunk in chunks],
         embeddings=embeddings,
-        metadatas=[chunk.metadata for chunk in chunks],
+        metadatas=[chunk.metadata for chunk in chunks], # type: ignore
     )
 
 
 @click.command()
+@click.option("--input-dir", type=str, default=TORCH_BASE / "docs", help="Input directory")
 @click.option("--batch-size", type=int, default=20, help="Batch size for embedding")
 @click.option("--num-workers", type=int, default=4, help="Number of worker threads")
 @click.option(
     "--extensions",
-    type=list[str],
-    default=["py"],
+    type=str,
+    default="rst,py",
     help="source code extensions that you what to search",
 )
 @click.option(
@@ -71,22 +72,27 @@ def process_chunk_batch(chunks: List[Document], embedding, vector_db, batch_size
     default=VectorDBType.CHROMA.value,
     help="Type of vector database to use",
 )
-def main(batch_size: int, num_workers: int, extensions: list[str], embedding_type: str, model_name: str, vector_db_type: str):
+def main(input_dir: str, batch_size: int, num_workers: int, extensions: str, embedding_type: str, model_name: str, vector_db_type: str):
     """
     embed all source files in torch into vector database
     Here is the default setting:
     - Splitter: RecursiveCharacterTextSplitter with chunk_size=1000, chunk_overlap=200
     - embedding model: voyage-code-3 (default)
     """
-    # find all cpp files in mlir/lib and mlir/include
-    found_source_file = list_source_files(TORCH_BASE / "torch", extensions)
+    logger.info(f"input_dir: {input_dir}")
+    logger.info(f"extensions: {extensions}")
+    logger.info(f"embedding_type: {embedding_type}")
+    logger.info(f"model_name: {model_name}")
+    logger.info(f"vector_db_type: {vector_db_type}")
+    extensions_list = extensions.split(",")
+    found_source_file = list_source_files(Path(input_dir), extensions_list)
 
     docs = [
         Document(page_content=x.read_text(), metadata={"source": str(x)})
         for x in found_source_file
     ]
 
-    logger.info(f"Loaded {len(docs)} with extensions {extensions}")
+    logger.info(f"Loaded {len(docs)} with extensions {extensions_list}")
     splitter = RecursiveCharacterTextSplitter.from_language(
         language=Language.PYTHON,
         chunk_size=1000,
@@ -113,14 +119,14 @@ def main(batch_size: int, num_workers: int, extensions: list[str], embedding_typ
     if len(new_chunks) > 0:
         # Process chunks in parallel batches
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
-            futures = []
+            futures:List[Future[None]] = []
             for i in range(0, len(new_chunks), batch_size):
                 batch_chunks = new_chunks[i : min(i + batch_size, len(new_chunks))]
                 future = executor.submit(process_chunk_batch, batch_chunks, embedding, vector_db, batch_size)
                 futures.append(future)
             
             # Wait for all batches to complete with progress bar
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing batches"):
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing batches"): # type: ignore
                 try:
                     future.result()
                 except Exception as e:

@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe tensor_is_aligned function checks if a tensor's memory is properly aligned for GPU operations. The vulnerable line performs alignment calculations that could lead to precision issues due to:\n1. Multiplication of storage_offset and dtype size before modulo\n2. Potential integer overflow in the multiplication\n3. Loss of precision when dealing with large tensors\n4. Incorrect alignment detection due to precision errors\n```\n\n```python\nimport torch\n\ndef check_alignment(tensor):\n    # Create a tensor with non-zero storage offset\n    x = torch.randn(10, 10)\n    y = x[5:, 5:]  # This creates a view with non-zero storage offset\n    return torch._inductor.utils.tensor_is_aligned(y)\n\n# Check if the sliced tensor is properly aligned\nprint(check_alignment(torch.randn(10, 10)))\n```\n\n```yaml\n- torch.randn\n- torch.Tensor.storage_offset\n- torch._inductor.utils.tensor_is_aligned\n",
-    "python_code": "\nimport torch\n\ndef check_alignment(tensor):\n    # Create a tensor with non-zero storage offset\n    x = torch.randn(10, 10)\n    y = x[5:, 5:]  # This creates a view with non-zero storage offset\n    return torch._inductor.utils.tensor_is_aligned(y)\n\n# Check if the sliced tensor is properly aligned\nprint(check_alignment(torch.randn(10, 10)))\n```\n\n```yaml\n- torch.randn\n- torch.Tensor.storage_offset\n- torch._inductor.utils.tensor_is_aligned\n",
+    "summary": "\nThe tensor_is_aligned function checks if a tensor's memory is properly aligned for GPU operations. The vulnerable line performs alignment calculations that could lead to precision issues due to:\n1. Multiplication of storage_offset and dtype size\n2. Modulo operation with GPU_ALIGN_BYTES\n3. Potential integer overflow in calculations\n4. Incorrect alignment detection due to precision loss\n",
+    "python_code": "\nimport torch\n\ndef check_alignment():\n    # Create a tensor with unaligned storage\n    x = torch.randn(10, 10)\n    # Force an unaligned storage offset\n    y = x[1:]\n    # Check alignment (will trigger the vulnerable calculation)\n    print(tensor_is_aligned(y))\n\ncheck_alignment()\n",
     "api": [
-        "torch.randn",
         "torch.Tensor.storage_offset",
-        "torch._inductor.utils.tensor_is_aligned"
+        "torch.Tensor.dtype",
+        "torch.Tensor.is_cuda"
     ]
 }

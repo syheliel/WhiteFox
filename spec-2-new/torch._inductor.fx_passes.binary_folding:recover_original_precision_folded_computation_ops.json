@@ -1,10 +1,13 @@
 {
-    "summary": "\nThe recover_original_precision_folded_computation_ops function handles precision recovery after binary folding operations in PyTorch graphs. The vulnerable line converts folded computation results back to their original precision using prims.convert_element_type.default. This is important because:\n1. Binary folding may perform computations in higher precision for better accuracy\n2. The conversion back to original precision may lose numerical precision\n3. The conversion assumes exact reversibility between dtype conversions\n4. Missing validation could lead to precision loss if conversion isn't exact\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass MixedPrecisionLinear(nn.Module):\n    def __init__(self, in_features, out_features):\n        super().__init__()\n        self.linear = nn.Linear(in_features, out_features)\n        self.linear = self.linear.to(torch.bfloat16)\n\n    def forward(self, x):\n        x = x.to(torch.float32)  # Force higher precision computation\n        x = self.linear(x)\n        return x.to(torch.bfloat16)  # Convert back to original precision\n```\n\n```yaml\n- nn.Linear\n- torch.to\n- torch.bfloat16\n- torch.float32\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MixedPrecisionLinear(nn.Module):\n    def __init__(self, in_features, out_features):\n        super().__init__()\n        self.linear = nn.Linear(in_features, out_features)\n        self.linear = self.linear.to(torch.bfloat16)\n\n    def forward(self, x):\n        x = x.to(torch.float32)  # Force higher precision computation\n        x = self.linear(x)\n        return x.to(torch.bfloat16)  # Convert back to original precision\n```\n\n```yaml\n- nn.Linear\n- torch.to\n- torch.bfloat16\n- torch.float32\n",
+    "summary": "\nThe recover_original_precision_folded_computation_ops function handles precision recovery after binary folding operations in PyTorch graphs. The vulnerable line converts folded computation results back to their original data type, which may lead to precision loss because:\n1. Binary folding operations are performed in higher precision (float32)\n2. Conversion back to original dtype (float16/bfloat16) may lose precision\n3. The conversion happens after mathematical operations where precision matters\n4. No rounding or proper handling is done during the conversion\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MixedPrecisionLinear(nn.Module):\n    def __init__(self, in_features, out_features):\n        super().__init__()\n        self.linear = nn.Linear(in_features, out_features).half()  # Original dtype is float16\n        \n    def forward(self, x):\n        # Input gets promoted to float32 during computation\n        x = x.float()  \n        x = self.linear(x)\n        # Automatic conversion back to original dtype happens here\n        return x.half()  \n",
     "api": [
         "nn.Linear",
-        "torch.to",
-        "torch.bfloat16",
-        "torch.float32"
+        "nn.Conv1d",
+        "nn.Conv2d",
+        "nn.Conv3d",
+        "nn.BatchNorm1d",
+        "nn.BatchNorm2d",
+        "nn.BatchNorm3d"
     ]
 }

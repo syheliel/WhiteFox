@@ -1,11 +1,9 @@
 {
-    "summary": "\nThe is_node_output_tensor function checks if a node's output in a PyTorch FX graph produces a Tensor. The vulnerable line assumes the type_ metadata is either a Tensor class or None, but doesn't handle cases where:\n1. type_ could be a Union type containing Tensor\n2. type_ could be a generic type parameter\n3. type_ could be a subclass of Tensor with additional constraints\n4. The issubclass check could raise TypeError for non-class inputs\n```\n\n```python\nimport torch\nimport torch.fx\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x):\n        return x\n\n# Create FX graph\nmodule = MyModule()\ntraced = torch.fx.symbolic_trace(module)\n\n# Add node with Union type metadata\nnode = list(traced.graph.nodes)[0]\nnode.meta['type'] = Union[torch.Tensor, int]  # This would cause issues\n\n# Check if node outputs tensor\nresult = torch.fx.experimental.proxy_tensor.is_node_output_tensor(node)\n```\n\n```yaml\n- nn.Module\n- fx.symbolic_trace\n- fx.GraphModule\n- fx.Node\n- experimental.proxy_tensor.is_node_output_tensor\n",
-    "python_code": "\nimport torch\nimport torch.fx\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x):\n        return x\n\n# Create FX graph\nmodule = MyModule()\ntraced = torch.fx.symbolic_trace(module)\n\n# Add node with Union type metadata\nnode = list(traced.graph.nodes)[0]\nnode.meta['type'] = Union[torch.Tensor, int]  # This would cause issues\n\n# Check if node outputs tensor\nresult = torch.fx.experimental.proxy_tensor.is_node_output_tensor(node)\n```\n\n```yaml\n- nn.Module\n- fx.symbolic_trace\n- fx.GraphModule\n- fx.Node\n- experimental.proxy_tensor.is_node_output_tensor\n",
+    "summary": "\nThe is_node_output_tensor function checks if a node's output in a PyTorch FX graph produces a Tensor. The vulnerable line assumes the type_ metadata is either a Tensor class or None, but doesn't handle cases where:\n1. type_ could be a Union type containing Tensor\n2. type_ could be a subclass of Tensor but with additional type annotations\n3. The metadata might contain type hints that aren't direct class objects\nThis could lead to false negatives when checking tensor outputs in complex type scenarios.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\nfrom typing import Union\n\nclass ModelWithUnionOutput(nn.Module):\n    def forward(self, x: torch.Tensor) -> Union[torch.Tensor, int]:\n        if x.sum() > 0:\n            return x\n        return 0\n\nmodel = ModelWithUnionOutput()\ntraced = torch.fx.symbolic_trace(model)\n# This would trigger the vulnerable line when checking node types\n",
     "api": [
         "nn.Module",
-        "fx.symbolic_trace",
-        "fx.GraphModule",
-        "fx.Node",
-        "experimental.proxy_tensor.is_node_output_tensor"
+        "torch.fx.symbolic_trace",
+        "torch.Tensor"
     ]
 }

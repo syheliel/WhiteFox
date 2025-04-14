@@ -1,9 +1,11 @@
 {
-    "summary": "\nThe mul function performs element-wise multiplication between tensors. The vulnerable line handles:\n1. Basic multiplication operation between tensors\n2. Special case handling for boolean tensors (converts to logical AND)\n3. Potential precision loss in floating point operations\n4. No explicit input validation for tensor types\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass SimpleModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        \n    def forward(self, x):\n        return x * self.weight  # Triggers mul operation\n\nmodel = SimpleModel()\nx = torch.randn(3, 3)\noutput = model(x)  # Will call the mul function\n```\n\n```yaml\n- nn.Parameter\n- torch.randn\n- torch.Tensor.__mul__\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass SimpleModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        \n    def forward(self, x):\n        return x * self.weight  # Triggers mul operation\n\nmodel = SimpleModel()\nx = torch.randn(3, 3)\noutput = model(x)  # Will call the mul function\n```\n\n```yaml\n- nn.Parameter\n- torch.randn\n- torch.Tensor.__mul__\n",
+    "summary": "\nThe mul function performs element-wise multiplication between tensors. The vulnerable line handles the multiplication operation which could lead to precision loss when dealing with certain data types or large values. This is important because:\n1. Multiplication operations can overflow/underflow with certain data types\n2. Precision loss can accumulate in neural networks\n3. The function lacks explicit dtype promotion rules\n4. No warnings are given for potential precision issues\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PrecisionLossModule(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This could cause precision loss with large values\n        return x * x\n\nmodel = PrecisionLossModule()\nx = torch.tensor([1e20, 1e30], dtype=torch.float32)\noutput = model(x)  # Potential precision loss here\n",
     "api": [
-        "nn.Parameter",
-        "torch.randn",
-        "torch.Tensor.__mul__"
+        "nn.Linear",
+        "nn.Conv2d",
+        "torch.mul",
+        "torch.matmul",
+        "torch.bmm"
     ]
 }

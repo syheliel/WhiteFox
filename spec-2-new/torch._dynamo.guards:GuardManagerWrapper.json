@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe GuardBuilder.__init__ method initializes a cache dictionary `_cached_guard_managers` that maps source names to guard managers. The vulnerability occurs because this cache is never cleared and could grow unbounded if new sources are frequently created during execution. This could lead to memory exhaustion over time.\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layers = nn.ModuleList([nn.Linear(10, 10) for _ in range(1000)])\n    \n    def forward(self, x):\n        for layer in self.layers:\n            x = layer(x)\n        return x\n\nmodel = Model()\ncompiled_model = torch.compile(model)\nx = torch.randn(10, 10)\ncompiled_model(x)  # Each layer access creates new sources\n```\n\n```yaml\n- nn.ModuleList\n- nn.Linear\n- torch.compile\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layers = nn.ModuleList([nn.Linear(10, 10) for _ in range(1000)])\n    \n    def forward(self, x):\n        for layer in self.layers:\n            x = layer(x)\n        return x\n\nmodel = Model()\ncompiled_model = torch.compile(model)\nx = torch.randn(10, 10)\ncompiled_model(x)  # Each layer access creates new sources\n```\n\n```yaml\n- nn.ModuleList\n- nn.Linear\n- torch.compile\n",
+    "summary": "\nThe GuardBuilder.__init__ method initializes a cache dictionary `_cached_guard_managers` that maps source names to GuardManager objects. The vulnerable line shows this cache is not bounded, which could lead to:\n1. Unbounded memory growth if sources are frequently created\n2. Potential denial of service if attackers can trigger source creation\n3. Cache pollution if malicious inputs generate many unique sources\n4. No eviction policy for old/stale entries\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        # Each call with new input creates new sources\n        return self.layer(x)\n\nmodel = Model()\nx = torch.randn(1, 10)\nfor _ in range(10000):  # Creates many unique sources\n    x = x + 0.1\n    model(x)  # Each call may create new sources\n",
     "api": [
-        "nn.ModuleList",
-        "nn.Linear",
-        "torch.compile"
+        "nn.Module",
+        "torch.randn",
+        "torch.nn.Linear"
     ]
 }

@@ -1,9 +1,10 @@
 {
-    "summary": "\nThe index_add function performs an in-place addition of values from a source tensor to specific indices of an input tensor. The vulnerable line handles a special case for bfloat16 tensors outside Facebook's internal codebase (fbcode) by falling back to the kernel implementation. This is important because:\n1. bfloat16 has reduced precision compared to float32\n2. Different implementations may produce slightly different numerical results\n3. The decomposition assumes consistent behavior across environments\n4. Missing validation could lead to precision discrepancies between fbcode and non-fbcode environments\n```\n\n```python\nimport torch\n\nx = torch.randn(5, 3, dtype=torch.bfloat16)\nt = torch.randn(2, 3, dtype=torch.bfloat16)\nindex = torch.tensor([0, 4])\nresult = torch.index_add(x, 0, index, t)\n```\n\n```yaml\n- torch.index_add\n- torch.Tensor.index_add_\n- torch.Tensor.to\n",
-    "python_code": "\nimport torch\n\nx = torch.randn(5, 3, dtype=torch.bfloat16)\nt = torch.randn(2, 3, dtype=torch.bfloat16)\nindex = torch.tensor([0, 4])\nresult = torch.index_add(x, 0, index, t)\n```\n\n```yaml\n- torch.index_add\n- torch.Tensor.index_add_\n- torch.Tensor.to\n",
+    "summary": "\nThe index_add function performs an in-place addition of values from a source tensor into the input tensor at specified indices. The vulnerable line specifically handles bfloat16 precision outside of fbcode (Facebook's internal codebase) by falling back to a kernel implementation. This is important because:\n1. bfloat16 has reduced precision compared to float32\n2. Different implementations may produce slightly different numerical results\n3. The fallback ensures consistent behavior across platforms\n4. Missing this check could lead to precision-related issues in non-fbcode environments\n",
+    "python_code": "\nimport torch\n\n# Create input tensor and indices\nx = torch.randn(5, 3, dtype=torch.bfloat16)\nindex = torch.tensor([0, 2, 4])\nsource = torch.randn(3, 3, dtype=torch.bfloat16)\n\n# Perform index_add operation\nresult = torch.index_add(x, 0, index, source)\nprint(result)\n",
     "api": [
         "torch.index_add",
         "torch.Tensor.index_add_",
-        "torch.Tensor.to"
+        "torch.Tensor.scatter_add",
+        "torch.scatter_add"
     ]
 }

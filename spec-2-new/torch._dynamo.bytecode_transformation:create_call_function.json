@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe create_call_function function handles generating bytecode instructions for function calls in PyTorch, with special handling for different Python versions. The vulnerable line checks Python version >= 3.11 to determine the correct bytecode sequence. This is important because:\n1. Different Python versions have different bytecode instructions for function calls\n2. Version-specific logic must correctly handle NULL pushing and argument rotation\n3. Incorrect version handling could generate invalid bytecode\n4. The function must maintain stack consistency across Python versions\n```\n\n```python\nimport torch\n\ndef example_function(x):\n    # This will trigger create_call_function with nargs=1\n    return torch.relu(x)\n\n# The call to relu() will be compiled to bytecode using create_call_function\nresult = example_function(torch.tensor([-1.0, 0.0, 1.0]))\n```\n\n```yaml\n- torch.relu\n- torch.tensor\n- torch.nn.functional.relu\n",
-    "python_code": "\nimport torch\n\ndef example_function(x):\n    # This will trigger create_call_function with nargs=1\n    return torch.relu(x)\n\n# The call to relu() will be compiled to bytecode using create_call_function\nresult = example_function(torch.tensor([-1.0, 0.0, 1.0]))\n```\n\n```yaml\n- torch.relu\n- torch.tensor\n- torch.nn.functional.relu\n",
+    "summary": "\nThe create_call_function function handles generating bytecode instructions for function calls in Python, with version-specific logic for different Python versions. The vulnerable line checks for Python 3.11+ to implement special handling for function calls. This is important because:\n1. Different Python versions have different bytecode representations for function calls\n2. The function must generate correct bytecode sequences for each version\n3. Missing version checks could lead to incorrect bytecode generation\n4. The logic handles PUSH_NULL and argument rotation for Python 3.11+\n",
+    "python_code": "\nimport torch\n\ndef my_function(x):\n    return torch.relu(x)\n\n# This will trigger create_call_function when compiled\ncompiled_fn = torch.compile(my_function)\nresult = compiled_fn(torch.tensor([-1.0, 0.0, 1.0]))\n",
     "api": [
+        "torch.compile",
         "torch.relu",
-        "torch.tensor",
-        "torch.nn.functional.relu"
+        "torch.tensor"
     ]
 }

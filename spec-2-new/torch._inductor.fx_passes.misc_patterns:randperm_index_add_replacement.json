@@ -1,10 +1,11 @@
 {
-    "summary": "\nThe randperm_index_add_replacement function provides an optimized implementation for index addition operations by using unsafe indexing operations. The vulnerable line uses torch.ops.aten._unsafe_index_put and aten._unsafe_index to perform the operation without bounds checking. This is problematic because:\n1. Unsafe operations skip bounds checking which could lead to memory corruption\n2. Precision may be affected if indices are out of bounds\n3. The operation assumes indices from randperm are always valid\n4. No fallback mechanism exists for invalid indices\n```\n\n```python\nimport torch\n\nx = torch.randn(4, 8, device='cuda')\ny = torch.randn(2, 8, device='cuda')\nindex = torch.randperm(x.shape[0], device=x.device)[:y.shape[0]]\n\n# This triggers the unsafe index operations\nresult = torch.index_add(x, 0, y, index)\n```\n\n```yaml\n- torch.index_add\n- torch.randperm\n- torch.ops.aten._unsafe_index_put\n- torch.ops.aten._unsafe_index\n",
-    "python_code": "\nimport torch\n\nx = torch.randn(4, 8, device='cuda')\ny = torch.randn(2, 8, device='cuda')\nindex = torch.randperm(x.shape[0], device=x.device)[:y.shape[0]]\n\n# This triggers the unsafe index operations\nresult = torch.index_add(x, 0, y, index)\n```\n\n```yaml\n- torch.index_add\n- torch.randperm\n- torch.ops.aten._unsafe_index_put\n- torch.ops.aten._unsafe_index\n",
+    "summary": "\nThe randperm_index_add_replacement function provides an optimized implementation for index_add operations by using unsafe indexing operations. The vulnerable line uses _unsafe_index_put and _unsafe_index which:\n1. Skip bounds checking for performance\n2. May lead to undefined behavior if indices are invalid\n3. Could cause precision issues if indices are out of bounds\n4. Assumes indices are valid and within bounds\n",
+    "python_code": "\nimport torch\n\nx = torch.randn(4, 8, device='cuda')\ny = torch.randn(2, 8, device='cuda')\n\nindex = torch.randperm(x.shape[0], device=x.device)[:y.shape[0]]\nresult = torch.index_add(x, dim=0, source=y, index=index)\n",
     "api": [
         "torch.index_add",
-        "torch.randperm",
-        "torch.ops.aten._unsafe_index_put",
-        "torch.ops.aten._unsafe_index"
+        "torch.index_select",
+        "torch.scatter",
+        "torch.gather",
+        "torch.take"
     ]
 }

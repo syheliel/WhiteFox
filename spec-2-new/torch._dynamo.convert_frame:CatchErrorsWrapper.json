@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe `CatchErrorsWrapper.__call__` function handles frame conversion in PyTorch's Dynamo compiler. The vulnerable line checks for special cases involving string filenames and `__new__` method names to skip conversion. This validation is important because:\n1. It handles edge cases in Python code execution\n2. Missing proper validation could lead to incorrect frame processing\n3. Special cases like namedtuple construction need to be handled carefully\n4. Incomplete checks might miss other similar special cases\n```\n\n```python\nimport torch\nfrom collections import namedtuple\n\nPoint = namedtuple('Point', ['x', 'y'])\np = Point(1, 2)  # This will trigger the vulnerable line when traced\n```\n\n```yaml\n- torch.compile\n- torch._dynamo.optimize\n- torch.jit.trace\n",
-    "python_code": "\nimport torch\nfrom collections import namedtuple\n\nPoint = namedtuple('Point', ['x', 'y'])\np = Point(1, 2)  # This will trigger the vulnerable line when traced\n```\n\n```yaml\n- torch.compile\n- torch._dynamo.optimize\n- torch.jit.trace\n",
+    "summary": "\nThe `CatchErrorsWrapper.__call__` function handles frame conversion in PyTorch's Dynamo compiler, including special case handling for certain Python constructs. The vulnerable line checks for string-based code objects with `__new__` name to skip nametuple constructor cases. This validation is incomplete because:\n1. It doesn't verify other potential special cases that might need similar handling\n2. The string filename check could be bypassed with crafted input\n3. Other constructor patterns might need similar special handling\n4. Missing validation could lead to incorrect frame conversion behavior\n",
+    "python_code": "\nimport torch\nfrom collections import namedtuple\n\nclass MyModule(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        Point = namedtuple('Point', ['x', 'y'])\n        self.point = Point(1, 2)\n\n    def forward(self, x):\n        return x + self.point.x\n\nmodel = MyModule()\noptimized_model = torch.compile(model)\noptimized_model(torch.tensor(1.0))\n",
     "api": [
         "torch.compile",
-        "torch._dynamo.optimize",
-        "torch.jit.trace"
+        "torch.nn.Module",
+        "collections.namedtuple"
     ]
 }

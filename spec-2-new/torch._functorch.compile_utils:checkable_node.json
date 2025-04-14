@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe checkable_node function is used to determine if a node in an FX graph represents a tensor with defined storage that can be evaluated. The vulnerable line checks if the node's meta data contains a \"val\" key and if that value is a torch.Tensor, but lacks proper validation of the node input type before accessing the meta data. This is important because:\n1. FX nodes may not always have meta data\n2. Improper node types could cause crashes when accessing meta data\n3. Missing validation could lead to runtime errors\n4. The function assumes the node has properly formatted meta data\n```\n\n```python\nimport torch\nimport torch.fx as fx\n\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = SimpleModel()\ntraced = fx.symbolic_trace(model)\nnode = list(traced.graph.nodes)[1]  # Get the mul operation node\n\n# This would trigger the vulnerable line when checking if the node is checkable\nnode.meta[\"val\"] = torch.randn(3)  # Set tensor value in meta\n```\n\n```yaml\n- fx.symbolic_trace\n- fx.Graph\n- fx.Node\n",
-    "python_code": "\nimport torch\nimport torch.fx as fx\n\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = SimpleModel()\ntraced = fx.symbolic_trace(model)\nnode = list(traced.graph.nodes)[1]  # Get the mul operation node\n\n# This would trigger the vulnerable line when checking if the node is checkable\nnode.meta[\"val\"] = torch.randn(3)  # Set tensor value in meta\n```\n\n```yaml\n- fx.symbolic_trace\n- fx.Graph\n- fx.Node\n",
+    "summary": "\nThe checkable_node function verifies if a node in an FX graph contains tensor metadata that can be checked for storage. The vulnerable line checks for the presence of 'val' in node.meta and its type without proper validation, which could lead to:\n1. Runtime errors if node.meta is not a dictionary\n2. Type errors if 'val' exists but isn't a torch.Tensor\n3. Potential security issues from unsafe metadata access\n4. Missing proper input validation before storage access\n",
+    "python_code": "\nimport torch\nimport torch.fx as fx\n\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = SimpleModel()\ntraced = fx.symbolic_trace(model)\n\n# Create a node with invalid meta data\nfor node in traced.graph.nodes:\n    if node.op == 'placeholder':\n        node.meta = \"invalid_meta\"  # This will cause issues when checkable_node runs\n        break\n\n# This would trigger the vulnerable line when processing the graph\noptimized_graph = fx.Graph()\nfor node in traced.graph.nodes:\n    if \"val\" not in node.meta or not isinstance(node.meta[\"val\"], torch.Tensor):\n        pass  # Simulating the vulnerable check\n",
     "api": [
-        "fx.symbolic_trace",
-        "fx.Graph",
-        "fx.Node"
+        "torch.fx.symbolic_trace",
+        "torch.fx.Graph",
+        "torch.fx.Node"
     ]
 }

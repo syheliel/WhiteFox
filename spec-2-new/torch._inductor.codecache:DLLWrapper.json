@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe `_dlclose` function in the DLLWrapper class is responsible for properly closing/unloading a dynamic library handle. The vulnerable line calls `f_dlclose(self.DLL._handle)` to release the library resources. This is important because:\n1. Failing to properly close library handles can lead to resource leaks\n2. The function handles both Linux (dlclose) and Windows (FreeLibrary) cases\n3. There's no error handling if the dlclose/FreeLibrary call fails\n4. The function warns but continues if the unloading function isn't found\n```\n\n```python\nimport torch\nimport ctypes\n\n# Example that would trigger the dlclose call\nclass MyLibrary:\n    def __init__(self):\n        self.lib = ctypes.CDLL('libm.so.6')  # Load a system library\n        \n    def __del__(self):\n        # This would trigger similar behavior to the vulnerable line\n        ctypes.CDLL(None).dlclose(self.lib._handle)\n\nlib = MyLibrary()\ndel lib  # Triggers __del__ and potential dlclose\n```\n\n```yaml\n- ctypes.CDLL\n- ctypes.CDLL.__del__\n- ctypes.CDLL._handle\n- ctypes.CDLL.dlclose\n",
-    "python_code": "\nimport torch\nimport ctypes\n\n# Example that would trigger the dlclose call\nclass MyLibrary:\n    def __init__(self):\n        self.lib = ctypes.CDLL('libm.so.6')  # Load a system library\n        \n    def __del__(self):\n        # This would trigger similar behavior to the vulnerable line\n        ctypes.CDLL(None).dlclose(self.lib._handle)\n\nlib = MyLibrary()\ndel lib  # Triggers __del__ and potential dlclose\n```\n\n```yaml\n- ctypes.CDLL\n- ctypes.CDLL.__del__\n- ctypes.CDLL._handle\n- ctypes.CDLL.dlclose\n",
+    "summary": "\nThe `_dlclose` function in the `DLLWrapper` class is responsible for unloading a dynamic library (DLL) handle. The vulnerable line calls `f_dlclose(self.DLL._handle)` to close the library handle. This is problematic because:\n1. There's no error handling if `dlclose` fails\n2. The library handle could leak if the function fails\n3. No cleanup is performed if the close operation fails\n4. The function assumes the handle is always valid\n",
+    "python_code": "\nimport torch\nimport ctypes\n\nclass MyDLLWrapper:\n    def __init__(self, lib_path):\n        self.lib_path = lib_path\n        self.DLL = ctypes.CDLL(lib_path)\n    \n    def close(self):\n        # This mimics the vulnerable pattern\n        f_dlclose = ctypes.CDLL(None).dlclose\n        f_dlclose(self.DLL._handle)\n\n# Usage that could trigger the issue\nwrapper = MyDLLWrapper(\"mylibrary.so\")\nwrapper.close()  # Potential resource leak if dlclose fails\n",
     "api": [
         "ctypes.CDLL",
         "ctypes.CDLL.__del__",
-        "ctypes.CDLL._handle",
-        "ctypes.CDLL.dlclose"
+        "ctypes.CDLL._handle"
     ]
 }

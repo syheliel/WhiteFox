@@ -1,11 +1,11 @@
 {
-    "summary": "\nThe find_input_mutations function identifies input mutations in a PyTorch computation graph. The vulnerable lines handle:\n1. Storage reference tracking using weak references which may be unstable for certain tensor types\n2. Schema validation for call_function nodes which lacks proper error handling\nKey concerns:\n- Weak storage references may lead to incorrect mutation detection\n- Missing schema validation could cause crashes or incorrect behavior\n- Both issues could affect CUDA graph correctness and performance\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass MutatingModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        \n    def forward(self, x):\n        x = x + self.weight  # creates a mutation\n        return x\n\nmodel = MutatingModel()\nx = torch.randn(3, 3, requires_grad=True)\noutput = model(x)\n```\n\n```yaml\n- nn.Module\n- nn.Parameter\n- torch.Tensor\n- torch.randn\n- torch.add\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MutatingModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        \n    def forward(self, x):\n        x = x + self.weight  # creates a mutation\n        return x\n\nmodel = MutatingModel()\nx = torch.randn(3, 3, requires_grad=True)\noutput = model(x)\n```\n\n```yaml\n- nn.Module\n- nn.Parameter\n- torch.Tensor\n- torch.randn\n- torch.add\n",
+    "summary": "\nThe find_input_mutations function identifies input mutations in a PyTorch computation graph. The vulnerable lines handle:\n1. Storage reference tracking using StorageWeakRef which may be unstable for certain tensor types\n2. Schema validation for call_function nodes which lacks proper attribute checking\nThese vulnerabilities could lead to:\n1. Incorrect mutation detection due to unstable storage references\n2. Missing mutation detection when node targets lack proper schema attributes\n3. Potential crashes when accessing invalid attributes\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MutatingModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        \n    def forward(self, x):\n        x.mul_(2)  # In-place operation that mutates input\n        return x @ self.weight\n\nmodel = MutatingModel()\nx = torch.randn(3, 3)\noutput = model(x)  # This will trigger find_input_mutations\n",
     "api": [
         "nn.Module",
-        "nn.Parameter",
         "torch.Tensor",
-        "torch.randn",
-        "torch.add"
+        "torch.fx.GraphModule",
+        "torch._dynamo",
+        "torch._inductor.cudagraph_utils"
     ]
 }

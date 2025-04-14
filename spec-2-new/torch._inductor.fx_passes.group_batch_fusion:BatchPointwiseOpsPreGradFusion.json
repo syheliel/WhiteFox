@@ -1,11 +1,12 @@
 {
-    "summary": "\nThe BatchPointwiseOpsPreGradFusion class handles fusing multiple pointwise operations (like tanh, sigmoid, relu) in PyTorch graphs before gradient computation. The vulnerable line updates the metadata for fused operations by directly applying the pointwise operation to stacked inputs. This is important because:\n1. Pointwise operations are mathematically independent across batches\n2. Stacking inputs before applying operations can affect numerical precision\n3. The fusion assumes identical behavior between batched and individual operations\n4. Precision differences could accumulate across batches\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOps(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.activations = nn.ModuleList([\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU()),\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU()),\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU())\n        ])\n\n    def forward(self, x):\n        results = [f(x) for f in self.activations]\n        return torch.cat(results, dim=1)\n```\n\n```yaml\n- nn.ReLU\n- nn.Sigmoid\n- nn.Tanh\n- nn.Hardtanh\n- nn.LeakyReLU\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOps(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.activations = nn.ModuleList([\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU()),\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU()),\n            nn.Sequential(nn.Linear(10, 10), nn.ReLU())\n        ])\n\n    def forward(self, x):\n        results = [f(x) for f in self.activations]\n        return torch.cat(results, dim=1)\n```\n\n```yaml\n- nn.ReLU\n- nn.Sigmoid\n- nn.Tanh\n- nn.Hardtanh\n- nn.LeakyReLU\n",
+    "summary": "\nThe BatchPointwiseOpsPreGradFusion class handles fusing multiple pointwise operations (like tanh, sigmoid, relu) in PyTorch graphs during the pre-gradient pass. The vulnerable line updates the metadata for batched operations by applying the pointwise operation to stacked inputs. This is important because:\n1. Pointwise operations are mathematically independent across batches\n2. Stacking inputs before applying operations can affect numerical precision\n3. The fusion assumes identical behavior between batched and individual operations\n4. Precision differences could accumulate across batches\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PointwiseOps(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.activations = nn.ModuleList([\n            nn.Sigmoid(),\n            nn.Sigmoid(),\n            nn.Sigmoid()\n        ])\n\n    def forward(self, x):\n        results = []\n        for i, act in enumerate(self.activations):\n            results.append(act(x[:, i:i+1]))\n        return torch.cat(results, dim=1)\n\nmodel = PointwiseOps()\nx = torch.randn(4, 3)  # Batch of 4, 3 features\noutput = model(x)  # Triggers batched sigmoid fusion\n",
     "api": [
-        "nn.ReLU",
         "nn.Sigmoid",
         "nn.Tanh",
-        "nn.Hardtanh",
-        "nn.LeakyReLU"
+        "nn.ReLU",
+        "nn.functional.sigmoid",
+        "nn.functional.tanh",
+        "nn.functional.relu"
     ]
 }

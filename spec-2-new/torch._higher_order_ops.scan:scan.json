@@ -1,11 +1,10 @@
 {
-    "summary": "\nThe generic_scan function performs an inclusive scan operation using a combine function. The vulnerable line pre-allocates output tensors using torch.zeros which could lead to precision loss if not properly initialized. This is important because:\n1. Scan operations accumulate values across a dimension\n2. Zero initialization may not be appropriate for all numeric types\n3. Precision loss could accumulate through multiple scan operations\n4. The function assumes proper initialization of output buffers\n```\n\n```python\nimport torch\n\ndef add(x, y):\n    next_carry = x + y\n    return next_carry, y\n\ninit = torch.zeros(1)\nxs = torch.arange(5, dtype=torch.float32)\nlast_carry, cumsum = torch.scan(add, init=init, xs=xs)\n```\n\n```yaml\n- torch.scan\n- torch.zeros\n- torch.ones_like\n- torch.stack\n- torch.arange\n",
-    "python_code": "\nimport torch\n\ndef add(x, y):\n    next_carry = x + y\n    return next_carry, y\n\ninit = torch.zeros(1)\nxs = torch.arange(5, dtype=torch.float32)\nlast_carry, cumsum = torch.scan(add, init=init, xs=xs)\n```\n\n```yaml\n- torch.scan\n- torch.zeros\n- torch.ones_like\n- torch.stack\n- torch.arange\n",
+    "summary": "\nThe generic_scan function performs an inclusive scan operation using a combine function. The vulnerable line handles pre-allocation of output tensors using torch.zeros, which could lead to precision loss if not properly initialized. This is important because:\n1. Scan operations accumulate values across dimensions\n2. Improper initialization could propagate numerical errors\n3. The zeros initialization may not match the expected numerical properties\n4. Precision loss could affect downstream computations\n",
+    "python_code": "\nimport torch\n\ndef add_scan(carry, x):\n    next_carry = carry + x\n    return next_carry, next_carry\n\ninit = torch.tensor(0.0)\nxs = torch.arange(1, 6, dtype=torch.float32)\nfinal_carry, cumsum = torch.scan(add_scan, init, xs)\n",
     "api": [
         "torch.scan",
         "torch.zeros",
         "torch.ones_like",
-        "torch.stack",
-        "torch.arange"
+        "torch.stack"
     ]
 }

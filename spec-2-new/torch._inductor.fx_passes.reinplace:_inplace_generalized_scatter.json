@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe _inplace_generalized_scatter function performs in-place tensor updates by applying a series of view operations and then copying source data into the modified tensor. The vulnerable line directly copies source data into the target tensor which can cause precision loss for certain data types. The _decompose_scatter_mutating function decomposes scatter operations into mutating operations but lacks proper validation for keyword arguments.\n```\n\n```python\nimport torch\n\n# Example triggering _inplace_generalized_scatter\nx = torch.randn(4, 4, dtype=torch.float16)  # Using float16 which is prone to precision loss\nsrc = torch.randn(2, 2, dtype=torch.float32)  # Higher precision source\nview_ops = [torch.ops.aten.slice.Tensor(x, 0, 0, 2), torch.ops.aten.slice.Tensor(x, 1, 0, 2)]\ntorch._inductor.fx_utils._inplace_generalized_scatter(x, src, view_ops)\n```\n\n```yaml\n- torch.ops.aten.slice.Tensor\n- torch.ops.aten.slice_scatter.default\n- torch.ops.aten.diagonal_scatter.default\n- torch.ops.aten.select_scatter.default\n",
-    "python_code": "\nimport torch\n\n# Example triggering _inplace_generalized_scatter\nx = torch.randn(4, 4, dtype=torch.float16)  # Using float16 which is prone to precision loss\nsrc = torch.randn(2, 2, dtype=torch.float32)  # Higher precision source\nview_ops = [torch.ops.aten.slice.Tensor(x, 0, 0, 2), torch.ops.aten.slice.Tensor(x, 1, 0, 2)]\ntorch._inductor.fx_utils._inplace_generalized_scatter(x, src, view_ops)\n```\n\n```yaml\n- torch.ops.aten.slice.Tensor\n- torch.ops.aten.slice_scatter.default\n- torch.ops.aten.diagonal_scatter.default\n- torch.ops.aten.select_scatter.default\n",
+    "summary": "\nThe _inplace_generalized_scatter function performs an in-place scatter operation by applying a series of view operations to an input tensor and then copying source data into the resulting view. The vulnerable line directly copies source data into the temporary tensor view without precision checks, which could lead to:\n1. Loss of precision when copying between different numeric types\n2. Potential overflow/underflow issues\n3. Silent data corruption for certain dtype conversions\n4. No explicit type checking or conversion handling\n",
+    "python_code": "\nimport torch\n\ndef scatter_example():\n    # Create input and source tensors with different dtypes\n    inp = torch.randn(10, dtype=torch.float64)  # 64-bit float\n    src = torch.randn(5, dtype=torch.float16)  # 16-bit float\n    \n    # Define view operations (slice example)\n    view_ops = [ViewOp(torch.ops.aten.slice.Tensor, (0, 2, 7))]\n    \n    # Trigger the vulnerable copy operation\n    result = _inplace_generalized_scatter(inp, src, view_ops)\n    return result\n",
     "api": [
-        "torch.ops.aten.slice.Tensor",
-        "torch.ops.aten.slice_scatter.default",
-        "torch.ops.aten.diagonal_scatter.default",
-        "torch.ops.aten.select_scatter.default"
+        "torch.Tensor.copy_",
+        "torch.Tensor.to",
+        "torch.as_tensor",
+        "torch.type_as"
     ]
 }

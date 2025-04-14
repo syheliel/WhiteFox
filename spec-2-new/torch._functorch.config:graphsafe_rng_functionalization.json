@@ -1,10 +1,11 @@
 {
-    "summary": "\nThe graphsafe_rng_functionalization flag controls whether CUDA graph operations should use functionalized random number generation (RNG). When enabled, it converts PyTorch's stateful RNG operations to their functional equivalents during CUDA graph capture. This is important because:\n1. CUDA graphs require deterministic operations for correct replay\n2. Traditional RNG operations maintain state which can cause issues in graph replay\n3. Functional RNG provides deterministic results during graph replay\n4. The precision implications come from potential differences between stateful and functional RNG implementations\n```\n\n```python\nimport torch\n\ndef cuda_graph_with_rng():\n    # Create a simple model with dropout (which uses RNG)\n    model = torch.nn.Sequential(\n        torch.nn.Linear(10, 10),\n        torch.nn.Dropout(p=0.5)\n    ).cuda()\n    \n    # Create input and warmup capture\n    x = torch.randn(1, 10).cuda()\n    g = torch.cuda.CUDAGraph()\n    \n    # Capture the graph (affected by graphsafe_rng_functionalization)\n    with torch.cuda.graph(g):\n        y = model(x)\n    \n    # Replay the graph\n    for _ in range(10):\n        g.replay()\n```\n\n```yaml\n- torch.cuda.CUDAGraph\n- torch.nn.Dropout\n- torch.nn.Sequential\n- torch.nn.Linear\n",
-    "python_code": "\nimport torch\n\ndef cuda_graph_with_rng():\n    # Create a simple model with dropout (which uses RNG)\n    model = torch.nn.Sequential(\n        torch.nn.Linear(10, 10),\n        torch.nn.Dropout(p=0.5)\n    ).cuda()\n    \n    # Create input and warmup capture\n    x = torch.randn(1, 10).cuda()\n    g = torch.cuda.CUDAGraph()\n    \n    # Capture the graph (affected by graphsafe_rng_functionalization)\n    with torch.cuda.graph(g):\n        y = model(x)\n    \n    # Replay the graph\n    for _ in range(10):\n        g.replay()\n```\n\n```yaml\n- torch.cuda.CUDAGraph\n- torch.nn.Dropout\n- torch.nn.Sequential\n- torch.nn.Linear\n",
+    "summary": "\nThe `graphsafe_rng_functionalization` flag controls whether CUDA graph operations should use functionalized random number generation (RNG). When enabled:\n1. It converts torch RNG operations to their functional Philox RNG equivalents\n2. Currently only functionalizes CUDA RNG operations\n3. May affect numerical precision in CUDA graph operations\n4. Being True by default means precision changes are silently applied\n5. Disabling could lead to different RNG behavior in CUDA graphs\n",
+    "python_code": "\nimport torch\n\n# Create a simple model that uses dropout (which uses RNG)\nmodel = torch.nn.Sequential(\n    torch.nn.Linear(10, 10),\n    torch.nn.Dropout(p=0.5)\n).cuda()\n\n# This will use the graphsafe_rng_functionalization setting\n# when running under CUDA graph capture\ng = torch.cuda.CUDAGraph()\nwith torch.cuda.graph(g):\n    x = torch.randn(10, 10, device='cuda')\n    output = model(x)\n",
     "api": [
-        "torch.cuda.CUDAGraph",
         "torch.nn.Dropout",
-        "torch.nn.Sequential",
-        "torch.nn.Linear"
+        "torch.nn.functional.dropout",
+        "torch.rand",
+        "torch.randn",
+        "torch.randint"
     ]
 }

@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe evaluate_min function in SizeVarAllocator compares two symbolic expressions (left and right) and returns the smaller one while adding appropriate guards. The vulnerable line uses size_hint to get concrete values for comparison, which may lose precision when dealing with symbolic expressions. This is important because:\n1. size_hint provides approximate values for symbolic expressions\n2. Precision loss could lead to incorrect min/max comparisons\n3. Incorrect comparisons may result in wrong guard conditions\n4. This could affect loop bounds and memory access patterns\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass MinComparison(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # Create symbolic expressions that might lose precision\n        left = x.shape[0] * 2\n        right = x.shape[0] * 2 + 1\n        # This will trigger evaluate_min with symbolic expressions\n        return torch.min(left, right)\n```\n\n```yaml\n- nn.Module\n- torch.min\n- torch.sym_int\n- torch.sym_float\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MinComparison(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # Create symbolic expressions that might lose precision\n        left = x.shape[0] * 2\n        right = x.shape[0] * 2 + 1\n        # This will trigger evaluate_min with symbolic expressions\n        return torch.min(left, right)\n```\n\n```yaml\n- nn.Module\n- torch.min\n- torch.sym_int\n- torch.sym_float\n",
+    "summary": "\nThe evaluate_min function in SizeVarAllocator is used to determine the smaller of two symbolic expressions while ensuring the result is guarded for correctness. The vulnerable line uses size_hint to get concrete values from symbolic expressions, which may lose precision when converting from symbolic to concrete values. This is important because:\n1. Precision loss could lead to incorrect min value selection\n2. The function is used in critical optimization paths\n3. Incorrect min evaluation could propagate through subsequent operations\n4. The guard mechanism assumes precise value comparisons\n",
+    "python_code": "\nimport torch\n\ndef test_evaluate_min():\n    x = torch.tensor([5.0])\n    y = torch.tensor([3.0])\n    # This would internally use evaluate_min when comparing tensor sizes\n    z = torch.min(x, y)  # Should return tensor with 3.0\n    return z\n",
     "api": [
-        "nn.Module",
         "torch.min",
+        "torch.Tensor.size",
         "torch.sym_int",
-        "torch.sym_float"
+        "torch._assert"
     ]
 }

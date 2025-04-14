@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe CompiledTritonKernels class handles caching of compiled Triton kernels in PyTorch. The vulnerable functions are:\n1. key(): Generates cache keys from kernel source code without input validation\n2. save(): Stores compiled kernels in an unbounded cache without size management\nKey issues:\n1. No validation of kernel_src input could lead to cache poisoning\n2. Unbounded cache growth could cause memory exhaustion\n3. No cache eviction policy is implemented\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass TritonKernelTester(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would normally be a real Triton kernel\n        kernel_src = \"malicious_kernel_code\"\n        key = torch._inductor.codecache.CompiledTritonKernels.key(kernel_src)\n        return x\n```\n\n```yaml\n- nn.Module\n- torch.compile\n- torch.jit.script\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass TritonKernelTester(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would normally be a real Triton kernel\n        kernel_src = \"malicious_kernel_code\"\n        key = torch._inductor.codecache.CompiledTritonKernels.key(kernel_src)\n        return x\n```\n\n```yaml\n- nn.Module\n- torch.compile\n- torch.jit.script\n",
+    "summary": "\nThe CompiledTritonKernels class manages an in-memory cache for compiled Triton kernels in PyTorch. The vulnerable functions are:\n1. key(): Generates cache keys from kernel source code without input validation\n2. save(): Stores compiled kernels in cache without size management\nKey issues:\n1. No validation of kernel_src input could lead to cache key collisions\n2. Unbounded cache growth could cause memory exhaustion\n3. No cache eviction policy implemented\n4. Potential for cache poisoning attacks\n",
+    "python_code": "\nimport torch\n\ndef compile_triton_kernel():\n    # This would normally be a real Triton kernel source\n    kernel_src = \"\"\"\n    def kernel():\n        pass\n    \"\"\"\n    # The vulnerable functions are called internally during compilation\n    compiled = torch.compile(lambda x: x + 1)\n    return compiled(torch.tensor([1.0]))\n",
     "api": [
-        "nn.Module",
         "torch.compile",
+        "torch._dynamo.optimize",
         "torch.jit.script"
     ]
 }

@@ -1,11 +1,10 @@
 {
-    "summary": "\nThe `addmm` function performs a matrix multiplication followed by an addition, with optional scaling factors. The vulnerable line checks if the operation is being performed on a CPU device, which triggers a specific optimization path. This is important because:\n1. The CPU-specific path may not be optimal for other device types\n2. Different devices may require different optimization strategies\n3. The decomposition assumes CPU-specific optimizations are beneficial\n4. Missing device-specific optimizations could lead to suboptimal performance on non-CPU devices\n```\n\n```python\nimport torch\n\nclass SimpleAddMM(torch.nn.Module):\n    def __init__(self):\n        super(SimpleAddMM, self).__init__()\n        \n    def forward(self, input, mat1, mat2):\n        return torch.addmm(input, mat1, mat2, beta=1.0, alpha=1.0)\n\n# Example usage\nmodel = SimpleAddMM()\ninput = torch.randn(3, 1)\nmat1 = torch.randn(3, 4)\nmat2 = torch.randn(4, 1)\noutput = model(input, mat1, mat2)\n```\n\n```yaml\n- torch.addmm\n- torch.nn.Linear\n- torch.nn.functional.linear\n- torch.matmul\n- torch.mm\n",
-    "python_code": "\nimport torch\n\nclass SimpleAddMM(torch.nn.Module):\n    def __init__(self):\n        super(SimpleAddMM, self).__init__()\n        \n    def forward(self, input, mat1, mat2):\n        return torch.addmm(input, mat1, mat2, beta=1.0, alpha=1.0)\n\n# Example usage\nmodel = SimpleAddMM()\ninput = torch.randn(3, 1)\nmat1 = torch.randn(3, 4)\nmat2 = torch.randn(4, 1)\noutput = model(input, mat1, mat2)\n```\n\n```yaml\n- torch.addmm\n- torch.nn.Linear\n- torch.nn.functional.linear\n- torch.matmul\n- torch.mm\n",
+    "summary": "\nThe addmm function performs a matrix multiplication and addition operation. The vulnerable line checks if the input tensor is on a CPU device to apply specific optimizations. This is important because:\n1. CPU-specific optimizations may not be optimal for other devices\n2. Different devices may require different optimization strategies\n3. The function assumes CPU-specific optimizations will always be beneficial\n4. Missing device-specific optimizations could lead to suboptimal performance on non-CPU devices\n",
+    "python_code": "\nimport torch\n\n# Simple example using addmm on CPU\nx = torch.randn(2, 3)\nmat1 = torch.randn(2, 3)\nmat2 = torch.randn(3, 3)\nresult = torch.addmm(x, mat1, mat2)\n",
     "api": [
         "torch.addmm",
-        "torch.nn.Linear",
-        "torch.nn.functional.linear",
+        "torch.mm",
         "torch.matmul",
-        "torch.mm"
+        "torch.bmm"
     ]
 }

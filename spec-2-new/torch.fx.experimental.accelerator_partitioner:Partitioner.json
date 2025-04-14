@@ -1,12 +1,10 @@
 {
-    "summary": "\nThe partition_graph function in the Partitioner class is responsible for dividing a PyTorch FX module into submodules that can be executed across different devices. The vulnerable line \"total_size_of_graph += node.size_bytes.total_size\" accumulates memory sizes of nodes to determine if the module can fit into available devices. Potential issues include:\n1. Precision loss when accumulating memory sizes\n2. Missing validation for device memory sizes\n3. No handling for quantized tensor sizes\n4. Potential arithmetic overflow with large models\n5. Inaccurate memory estimation affecting partition decisions\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass LargeModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer1 = nn.Linear(1000000, 1000000)\n        self.layer2 = nn.Linear(1000000, 1000000)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\nmodel = LargeModel()\n# This large model will trigger memory size accumulation in partition_graph\nscripted = torch.jit.script(model)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.Embedding\n- nn.BatchNorm2d\n- nn.LayerNorm\n- nn.MultiheadAttention\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass LargeModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer1 = nn.Linear(1000000, 1000000)\n        self.layer2 = nn.Linear(1000000, 1000000)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\nmodel = LargeModel()\n# This large model will trigger memory size accumulation in partition_graph\nscripted = torch.jit.script(model)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.Embedding\n- nn.BatchNorm2d\n- nn.LayerNorm\n- nn.MultiheadAttention\n",
+    "summary": "\nThe partition_graph function in the Partitioner class handles partitioning a PyTorch module across multiple devices. The vulnerable line accumulates total memory size by adding node sizes, which could lead to precision loss due to floating-point arithmetic. Key issues include:\n1. Potential precision loss in memory size calculations\n2. Missing validation for device memory sizes\n3. No handling for quantized tensor sizes\n4. Potential security issues with attribute access\n5. Missing checks for circular dependencies\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MultiDeviceModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer1 = nn.Linear(1000, 1000)\n        self.layer2 = nn.Linear(1000, 1000)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\nmodel = MultiDeviceModel()\n# This would trigger the partition_graph function when using torch.package\n# or other multi-device deployment scenarios\n",
     "api": [
         "nn.Linear",
-        "nn.Conv2d",
-        "nn.Embedding",
-        "nn.BatchNorm2d",
-        "nn.LayerNorm",
-        "nn.MultiheadAttention"
+        "nn.Module",
+        "torch.package",
+        "torch.nn.utils.prune"
     ]
 }

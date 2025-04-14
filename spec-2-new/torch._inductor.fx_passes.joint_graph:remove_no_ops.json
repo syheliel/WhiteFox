@@ -1,8 +1,12 @@
 {
-    "summary": "\nThe remove_no_ops function handles removing no-op operations from PyTorch graphs. The vulnerable lines are:\n1. The tensor metadata comparison may lose precision by not comparing all relevant tensor properties\n2. The argument type checking is incomplete as it doesn't verify all possible input types\nThese issues are important because:\n1. Precision loss in tensor comparison could lead to incorrect graph optimizations\n2. Incomplete type checking could miss invalid inputs that should be handled\n3. Both issues could potentially cause incorrect graph transformations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass NoOpModel(nn.Module):\n    def __init__(self):\n        super(NoOpModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n\n    def forward(self, x):\n        # These operations will be removed by remove_no_ops\n        x = x + 0\n        x = x * 1\n        x = x - 0\n        x = x / 1\n        return self.linear(x)\n\nmodel = NoOpModel()\nscripted = torch.jit.script(model)\n```\n\n```yaml\n- nn.Linear\n- torch.jit.script\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass NoOpModel(nn.Module):\n    def __init__(self):\n        super(NoOpModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n\n    def forward(self, x):\n        # These operations will be removed by remove_no_ops\n        x = x + 0\n        x = x * 1\n        x = x - 0\n        x = x / 1\n        return self.linear(x)\n\nmodel = NoOpModel()\nscripted = torch.jit.script(model)\n```\n\n```yaml\n- nn.Linear\n- torch.jit.script\n",
+    "summary": "\nThe remove_no_ops function handles removing no-op operations (like adding 0 or multiplying by 1) from PyTorch graphs. The vulnerable lines involve:\n1. Comparing tensor metadata (shape, dtype, device) without considering numerical precision\n2. Incomplete argument type checking that could lead to incorrect graph transformations\nKey implications:\n1. Precision loss could occur when comparing tensor values for equality\n2. Missing type checks could allow invalid operations to pass through\n3. The function assumes tensor metadata comparison is sufficient for optimization decisions\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass NoOpModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # These operations will be optimized away by remove_no_ops\n        x = x + 0\n        x = x * 1\n        x = x - 0\n        x = x / 1\n        return x\n\nmodel = NoOpModel()\nx = torch.randn(10)\nout = model(x)\n",
     "api": [
-        "nn.Linear",
-        "torch.jit.script"
+        "nn.Module",
+        "torch.add",
+        "torch.sub",
+        "torch.mul",
+        "torch.div",
+        "torch.Tensor"
     ]
 }

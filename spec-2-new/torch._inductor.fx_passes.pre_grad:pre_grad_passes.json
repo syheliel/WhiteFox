@@ -1,18 +1,10 @@
 {
-    "summary": "\nThe quant_lift_up function in pre_grad_passes handles quantization-related graph transformations in PyTorch. The vulnerable line applies quantization passes that:\n1. May modify tensor precision and numerical representations\n2. Could potentially affect model accuracy if not properly validated\n3. Operates on the FX graph before gradient computation\n4. Needs careful handling of quantization parameters to maintain numerical stability\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass QuantizedModel(nn.Module):\n    def __init__(self):\n        super(QuantizedModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n        self.relu = nn.ReLU()\n\n    def forward(self, x):\n        x = self.linear(x)\n        x = self.relu(x)\n        return x\n\nmodel = QuantizedModel()\nquantized_model = torch.quantization.quantize_dynamic(\n    model,\n    {nn.Linear},\n    dtype=torch.qint8\n)\n```\n\n```yaml\n- nn.quantized.Linear\n- nn.quantized.Conv2d\n- nn.quantized.Conv3d\n- nn.quantized.ConvTranspose2d\n- nn.quantized.ConvTranspose3d\n- nn.quantized.BatchNorm2d\n- nn.quantized.BatchNorm3d\n- nn.quantized.LayerNorm\n- nn.quantized.GroupNorm\n- nn.quantized.InstanceNorm1d\n- nn.quantized.InstanceNorm2d\n- nn.quantized.InstanceNorm3d\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass QuantizedModel(nn.Module):\n    def __init__(self):\n        super(QuantizedModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n        self.relu = nn.ReLU()\n\n    def forward(self, x):\n        x = self.linear(x)\n        x = self.relu(x)\n        return x\n\nmodel = QuantizedModel()\nquantized_model = torch.quantization.quantize_dynamic(\n    model,\n    {nn.Linear},\n    dtype=torch.qint8\n)\n```\n\n```yaml\n- nn.quantized.Linear\n- nn.quantized.Conv2d\n- nn.quantized.Conv3d\n- nn.quantized.ConvTranspose2d\n- nn.quantized.ConvTranspose3d\n- nn.quantized.BatchNorm2d\n- nn.quantized.BatchNorm3d\n- nn.quantized.LayerNorm\n- nn.quantized.GroupNorm\n- nn.quantized.InstanceNorm1d\n- nn.quantized.InstanceNorm2d\n- nn.quantized.InstanceNorm3d\n",
+    "summary": "\nThe quant_lift_up function is part of PyTorch's quantization passes that modify the model graph to prepare it for quantization. The vulnerable line indicates this pass may affect numerical precision because:\n1. Quantization inherently reduces precision by converting float to integer\n2. The pass may change model behavior by altering tensor representations\n3. Precision loss could accumulate through multiple quantization operations\n4. The transformation happens before gradient computation which could affect training stability\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass QuantModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        self.relu = nn.ReLU()\n\n    def forward(self, x):\n        x = self.linear(x)\n        x = self.relu(x)\n        return x\n\nmodel = QuantModel()\n# This will trigger quantization passes including quant_lift_up\nquantized_model = torch.quantization.quantize_dynamic(\n    model, {nn.Linear}, dtype=torch.qint8\n)\n",
     "api": [
-        "nn.quantized.Linear",
-        "nn.quantized.Conv2d",
-        "nn.quantized.Conv3d",
-        "nn.quantized.ConvTranspose2d",
-        "nn.quantized.ConvTranspose3d",
-        "nn.quantized.BatchNorm2d",
-        "nn.quantized.BatchNorm3d",
-        "nn.quantized.LayerNorm",
-        "nn.quantized.GroupNorm",
-        "nn.quantized.InstanceNorm1d",
-        "nn.quantized.InstanceNorm2d",
-        "nn.quantized.InstanceNorm3d"
+        "torch.quantization.quantize_dynamic",
+        "torch.quantization.quantize",
+        "torch.quantization.prepare",
+        "torch.quantization.convert"
     ]
 }

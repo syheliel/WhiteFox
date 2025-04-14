@@ -1,11 +1,10 @@
 {
-    "summary": "\nThe `angle` function computes the phase angle of complex numbers or the angle of real numbers in radians. The vulnerable line creates a tensor with the value of pi using `torch.scalar_tensor`, which may not provide sufficient precision for certain numerical applications. This is important because:\n1. Pi is a fundamental mathematical constant\n2. Low precision could affect numerical accuracy in sensitive calculations\n3. The function is used for both complex and real number angle computations\n4. Precision requirements may vary across different use cases\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass AngleExample(nn.Module):\n    def __init__(self):\n        super(AngleExample, self).__init__()\n    \n    def forward(self, x):\n        return torch.angle(x)\n\n# Example usage with complex numbers\nmodel = AngleExample()\ninput_tensor = torch.tensor([1+1j, -1-1j, 0+0j])\noutput = model(input_tensor)\n```\n\n```yaml\n- torch.angle\n- torch.is_complex\n- torch.isnan\n- torch.atan2\n- torch.where\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass AngleExample(nn.Module):\n    def __init__(self):\n        super(AngleExample, self).__init__()\n    \n    def forward(self, x):\n        return torch.angle(x)\n\n# Example usage with complex numbers\nmodel = AngleExample()\ninput_tensor = torch.tensor([1+1j, -1-1j, 0+0j])\noutput = model(input_tensor)\n```\n\n```yaml\n- torch.angle\n- torch.is_complex\n- torch.isnan\n- torch.atan2\n- torch.where\n",
+    "summary": "\nThe angle function computes the phase angle of complex numbers or the angle of real numbers. The vulnerable line creates a tensor with the value of pi using math.pi, which may not provide sufficient precision for some numerical applications. This is important because:\n1. The angle calculation relies on precise trigonometric values\n2. Lower precision pi could lead to inaccurate angle computations\n3. Complex number operations require high precision for correct results\n4. The function handles both real and complex number cases\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass AngleExample(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        return torch.angle(x)\n\nmodel = AngleExample()\ninput_tensor = torch.randn(3, 3, dtype=torch.complex64)\noutput = model(input_tensor)\n",
     "api": [
         "torch.angle",
-        "torch.is_complex",
-        "torch.isnan",
         "torch.atan2",
+        "torch.isnan",
         "torch.where"
     ]
 }

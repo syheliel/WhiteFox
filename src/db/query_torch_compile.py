@@ -7,12 +7,9 @@ that are related to torch.compile functionality.
 
 import click
 from loguru import logger
-from pathlib import Path
 from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType
 from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.markdown import Markdown
+from typing import List
 
 console = Console()
 
@@ -54,6 +51,7 @@ def main(embedding_type: str, model_name: str, vector_db_type: str, query: str, 
     """
     Query the vector database for code snippets related to torch.compile.
     """
+    logger.info("hello")
     # Create embedding instance
     embedding = EmbeddingFactory.create_embedding(
         EmbeddingType(embedding_type), model_name
@@ -68,9 +66,9 @@ def main(embedding_type: str, model_name: str, vector_db_type: str, query: str, 
     # Query the vector database
     logger.info(f"Querying vector database with: '{query}'")
     results = vector_db.query_by_emb(query_embedding, n_results=num_results)
-    docs = results["documents"][0] # type: ignore
-    for doc in docs:
-        print(doc)
+    docs:List[str] = results["documents"][0] # type: ignore
+    for doc in docs: # type: ignore
+        print(doc) # type: ignore
     
 
 if __name__ == "__main__":

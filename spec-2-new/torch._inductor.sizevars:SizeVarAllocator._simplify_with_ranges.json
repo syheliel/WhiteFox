@@ -1,11 +1,9 @@
 {
-    "summary": "\nThe `_simplify_with_ranges` function in SizeVarAllocator handles simplifying indexing expressions with knowledge of variable ranges. The vulnerable line `expr = join_dimensions(self.simplify(expr))` combines modular indexing operations which could lead to precision loss when:\n1. Combining multiple ModularIndexing operations\n2. Simplifying FloorDiv operations\n3. Merging dimensions with different ranges\n4. Potentially losing precision during dimension joining operations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ModelWithComplexIndexing(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(128, 256))\n        \n    def forward(self, x):\n        # Complex indexing that could trigger join_dimensions\n        idx1 = x.shape[0] % 32\n        idx2 = (x.shape[0] // 32) % 4\n        return self.weight[idx1 + 32 * idx2]\n```\n\n```yaml\n- nn.Parameter\n- nn.Module\n- nn.Linear\n- nn.Conv2d\n- nn.Embedding\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithComplexIndexing(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(128, 256))\n        \n    def forward(self, x):\n        # Complex indexing that could trigger join_dimensions\n        idx1 = x.shape[0] % 32\n        idx2 = (x.shape[0] // 32) % 4\n        return self.weight[idx1 + 32 * idx2]\n```\n\n```yaml\n- nn.Parameter\n- nn.Module\n- nn.Linear\n- nn.Conv2d\n- nn.Embedding\n",
+    "summary": "\nThe `_simplify_with_ranges` function in SizeVarAllocator handles simplifying indexing expressions with knowledge of variable ranges. The vulnerable line `expr = join_dimensions(self.simplify(expr))` combines modular indexing operations which could lead to precision loss when:\n1. Combining multiple ModularIndexing operations\n2. Converting ModularIndexing to FloorDiv operations\n3. Simplifying complex indexing expressions\n4. Potentially losing precision during dimension joining operations\n",
+    "python_code": "\nimport torch\n\ndef test_simplify_indexing():\n    x = torch.randn(10, 20)\n    idx1 = torch.arange(10)\n    idx2 = torch.arange(20)\n    \n    # Complex indexing that could trigger join_dimensions\n    result = x[idx1 % 5, idx2 % 4]\n    return result\n",
     "api": [
-        "nn.Parameter",
-        "nn.Module",
-        "nn.Linear",
-        "nn.Conv2d",
-        "nn.Embedding"
+        "torch.arange",
+        "torch.Tensor.__mod__",
+        "torch.Tensor.__getitem__"
     ]
 }

@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe size_hint function in SizeVarAllocator is used to convert symbolic expressions into concrete integer values for shape computations. The vulnerable line performs a direct integer conversion which can lose precision when:\n1. The expression evaluates to a large number that exceeds integer precision\n2. The expression contains complex floating point operations\n3. The symbolic expression cannot be properly simplified to an integer\n4. The conversion happens before full expression simplification\n```\n\n```python\nimport torch\n\ndef create_large_tensor():\n    # Create a tensor with shape that would cause precision loss\n    size = 2**60  # Very large size that could cause precision issues\n    return torch.randn(size, size)\n\n# This could trigger precision loss in size_hint when computing strides\nt = create_large_tensor()\nprint(t.stride())\n```\n\n```yaml\n- nn.Module.size\n- nn.Module.stride\n- nn.functional.pad\n- nn.functional.interpolate\n",
-    "python_code": "\nimport torch\n\ndef create_large_tensor():\n    # Create a tensor with shape that would cause precision loss\n    size = 2**60  # Very large size that could cause precision issues\n    return torch.randn(size, size)\n\n# This could trigger precision loss in size_hint when computing strides\nt = create_large_tensor()\nprint(t.stride())\n```\n\n```yaml\n- nn.Module.size\n- nn.Module.stride\n- nn.functional.pad\n- nn.functional.interpolate\n",
+    "summary": "\nThe size_hint function in SizeVarAllocator is used to convert symbolic expressions to concrete integer values for shape computations. The vulnerable line performs a forced integer conversion which may lose precision when dealing with complex expressions. This is important because:\n1. Shape calculations need to be precise for correct tensor operations\n2. Precision loss could lead to incorrect tensor shapes or sizes\n3. Complex expressions may not always convert cleanly to integers\n4. The function doesn't properly handle cases where conversion isn't possible\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ShapeTest(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # Create a complex symbolic expression\n        size = x.size(0) * x.size(1) // x.size(2)\n        # This will trigger the size_hint conversion\n        return x.view(size, -1)\n\n# Test with input that could cause precision issues\nx = torch.randn(1000000, 1000000, 1000000)\nmodel = ShapeTest()\nout = model(x)\n",
     "api": [
         "nn.Module.size",
-        "nn.Module.stride",
-        "nn.functional.pad",
-        "nn.functional.interpolate"
+        "nn.Module.view",
+        "torch.Tensor.size",
+        "torch.Tensor.view"
     ]
 }

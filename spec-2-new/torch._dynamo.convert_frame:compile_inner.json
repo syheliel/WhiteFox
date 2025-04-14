@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe has_tensor function checks if an object contains PyTorch tensors or numpy arrays when tracing is enabled. The vulnerable line handles numpy array detection but lacks quantization support, which could lead to:\n1. Missing quantization for numpy arrays during tracing\n2. Potential numerical precision issues\n3. Inconsistent behavior between traced and non-traced execution\n4. Lack of optimization opportunities for quantized numpy operations\n```\n\n```python\nimport torch\nimport numpy as np\n\nclass NumpyModel(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = torch.nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Convert tensor to numpy array\n        x_np = x.detach().numpy()\n        # Process with numpy operations\n        x_np = x_np * 2\n        # Convert back to tensor\n        return self.linear(torch.from_numpy(x_np))\n\nmodel = NumpyModel()\noptimized_model = torch.compile(model)\ninput = torch.randn(10)\noutput = optimized_model(input)\n```\n\n```yaml\n- torch.compile\n- torch.nn.Linear\n- torch.from_numpy\n",
-    "python_code": "\nimport torch\nimport numpy as np\n\nclass NumpyModel(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = torch.nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Convert tensor to numpy array\n        x_np = x.detach().numpy()\n        # Process with numpy operations\n        x_np = x_np * 2\n        # Convert back to tensor\n        return self.linear(torch.from_numpy(x_np))\n\nmodel = NumpyModel()\noptimized_model = torch.compile(model)\ninput = torch.randn(10)\noutput = optimized_model(input)\n```\n\n```yaml\n- torch.compile\n- torch.nn.Linear\n- torch.from_numpy\n",
+    "summary": "\nThe has_tensor function checks if an object contains PyTorch tensors or numpy arrays when tracing is enabled. The vulnerable line specifically checks for numpy arrays when config.trace_numpy is True, but lacks proper handling for quantized numpy arrays. This could lead to:\n1. Missing quantization information when tracing numpy arrays\n2. Incorrect tensor/numpy array detection\n3. Potential numerical precision issues\n4. Incomplete graph capture when quantized numpy arrays are present\n",
+    "python_code": "\nimport torch\nimport numpy as np\n\nclass ModelWithNumpy(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This quantized numpy array won't be properly handled\n        np_arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)\n        return x + torch.from_numpy(np_arr)\n",
     "api": [
-        "torch.compile",
-        "torch.nn.Linear",
-        "torch.from_numpy"
+        "torch.from_numpy",
+        "torch.Tensor",
+        "torch.nn.Module"
     ]
 }

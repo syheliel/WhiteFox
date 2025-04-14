@@ -1,9 +1,10 @@
 {
-    "summary": "\nThe `_compile_inner` function in PyTorch's Dynamo compiler handles the transformation of Python bytecode into optimized FX graphs. The vulnerable line performs direct code object transformation which could potentially lead to code injection if untrusted input is processed. This is critical because:\n1. It directly modifies executable code objects\n2. No input validation is performed on the code being transformed\n3. Maliciously crafted bytecode could bypass safety checks\n4. The transformation happens at a low level in the compilation pipeline\n```\n\n```python\nimport torch\n\ndef vulnerable_function(x):\n    # This function's bytecode could be manipulated\n    return x * 2\n\ncompiled_fn = torch.compile(vulnerable_function)\nresult = compiled_fn(torch.tensor([1, 2, 3]))\n```\n\n```yaml\n- torch.compile\n- torch._dynamo.optimize\n- torch.fx.symbolic_trace\n",
-    "python_code": "\nimport torch\n\ndef vulnerable_function(x):\n    # This function's bytecode could be manipulated\n    return x * 2\n\ncompiled_fn = torch.compile(vulnerable_function)\nresult = compiled_fn(torch.tensor([1, 2, 3]))\n```\n\n```yaml\n- torch.compile\n- torch._dynamo.optimize\n- torch.fx.symbolic_trace\n",
+    "summary": "\nThe `_compile_inner` function handles the core compilation process in TorchDynamo, transforming Python bytecode into optimized FX graphs. The vulnerable line performs direct code object transformation which could potentially allow code injection if untrusted input reaches this point. This is critical because:\n1. It operates at the bytecode level with full code generation capabilities\n2. There's no validation of the transformed code's safety\n3. Maliciously crafted bytecode could bypass Python's normal security checks\n4. The transformation happens deep in the compilation pipeline where errors are hard to trace\n",
+    "python_code": "\nimport torch\n\ndef vulnerable_function(x):\n    # This could be exploited if 'x' contains malicious bytecode\n    compiled = torch.compile(lambda: x, fullgraph=True)\n    return compiled()\n\n# Potential exploit could involve passing crafted bytecode objects\nmalicious_code = compile(\"import os; os.system('rm -rf /')\", '<string>', 'exec')\nvulnerable_function(malicious_code)\n",
     "api": [
         "torch.compile",
         "torch._dynamo.optimize",
-        "torch.fx.symbolic_trace"
+        "torch.jit.script",
+        "torch.jit.trace"
     ]
 }

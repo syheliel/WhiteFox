@@ -1,8 +1,7 @@
 {
-    "summary": "\nThe lookup_backend function is responsible for expanding backend strings to their corresponding compiler functions in PyTorch's dynamo backend registry. The vulnerable line checks if a compiler_fn exists in _BACKENDS without proper validation of the input backend name. This is important because:\n1. The function accepts string inputs for backend names\n2. No validation is performed on the string format\n3. Malformed backend names could potentially bypass checks\n4. This could lead to unexpected behavior or security issues\n```\n\n```python\nimport torch\n\n# Create a simple model\nmodel = torch.nn.Linear(10, 10)\n\n# Try to compile with a potentially malformed backend name\noptimized_model = torch.compile(model, backend=\"malicious_backend_name\")\n```\n\n```yaml\n- torch.compile\n- torch.nn.Module\n",
-    "python_code": "\nimport torch\n\n# Create a simple model\nmodel = torch.nn.Linear(10, 10)\n\n# Try to compile with a potentially malformed backend name\noptimized_model = torch.compile(model, backend=\"malicious_backend_name\")\n```\n\n```yaml\n- torch.compile\n- torch.nn.Module\n",
+    "summary": "\nThe lookup_backend function is responsible for expanding backend strings to their corresponding compiler functions in PyTorch's dynamo backend registry system. The vulnerable line checks if a compiler function exists in the _BACKENDS registry without proper validation of the input backend name. This is important because:\n1. Backend names are used to look up compiler implementations\n2. Malformed backend names could bypass registration checks\n3. No input validation could lead to unexpected behavior or errors\n4. The system assumes backend names are properly formatted strings\n",
+    "python_code": "\nimport torch\n\n# Create a simple model\nmodel = torch.nn.Linear(10, 10)\n\n# Try to compile with a potentially malformed backend name\noptimized_model = torch.compile(model, backend=\"invalid_backend_name!\")\n",
     "api": [
-        "torch.compile",
-        "torch.nn.Module"
+        "torch.compile"
     ]
 }

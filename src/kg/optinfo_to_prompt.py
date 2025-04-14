@@ -1,16 +1,16 @@
 from src.conf import OPTINFO_PATH, TORCH_BASE
 import yaml
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any, Union
 from loguru import logger
 import click
 import tqdm
 from src.llm_client import get_openai, ALL_MODEL
-def optinfo_to_prompt(optinfo_path: Path = OPTINFO_PATH) -> dict:
+def optinfo_to_prompt(optinfo_path: Path = OPTINFO_PATH) -> Dict[str, Any]: # type: ignore
     with open(optinfo_path, "r") as f:
         return yaml.safe_load(f.read().replace("\t", "    "))
 
-def dict_to_paths(d, base_path:Path=TORCH_BASE) -> List[Path]:
+def dict_to_paths(d: Dict[str, Union[Dict[str, Any], List[str]]], base_path:Path=TORCH_BASE) -> List[Path]:
     """
     Convert a nested dictionary structure into a list of complete file paths.
     
@@ -21,7 +21,7 @@ def dict_to_paths(d, base_path:Path=TORCH_BASE) -> List[Path]:
     Returns:
         A list of complete file paths
     """
-    paths = []
+    paths:List[Path] = []
     
     for key, value in d.items():
         current_path = base_path / key
@@ -34,13 +34,13 @@ def dict_to_paths(d, base_path:Path=TORCH_BASE) -> List[Path]:
                 else:
                     # This is a file
                     paths.append(current_path / item)
-        elif isinstance(value, dict):
+        elif isinstance(value, dict): # type: ignore
             # This is a directory with nested files
             paths.extend(dict_to_paths(value, current_path))
     
     return paths
 
-def get_complete_paths(optinfo_path: Path = OPTINFO_PATH) -> list:
+def get_complete_paths(optinfo_path: Path = OPTINFO_PATH) -> List[Path]:
     """
     Get a list of complete file paths from the optinfo file.
     
@@ -54,7 +54,7 @@ def get_complete_paths(optinfo_path: Path = OPTINFO_PATH) -> list:
     return dict_to_paths(optinfo)
 
 def remove_unwanted_paths(paths: List[Path]) -> List[Path]:
-    new_paths = []
+    new_paths:List[Path] = []
     for path in paths:
         if "__init__" in path.name:
             continue
@@ -97,7 +97,7 @@ def main(model: str, output_dir: str): # type: ignore
     paths = get_complete_paths()
     paths = remove_unwanted_paths(paths)[:100]
     logger.info(f"Found {len(paths)} paths")
-    not_found = []
+    not_found:List[Path] = []
     for path in tqdm.tqdm(sorted(paths)):
         if not path.exists() or not path.is_file():
             logger.info(f"skip {path_to_modulename(path)}")

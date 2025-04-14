@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe ConstantAttrMap class is a custom mapping class that handles module constants (tensors, ScriptObjects, FakeScriptObjects) as keys. The vulnerable __contains__ method checks for key existence but relies on hash() for ScriptObjects which could lead to hash collisions. The add method has incomplete type checking in its error message, missing FakeScriptObject in the expected types list.\n```\n\n```python\nimport torch\n\nclass MyModule(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.register_buffer('my_tensor', torch.randn(3,3))\n        \n    def forward(self, x):\n        return x + self.my_tensor\n\nmodel = MyModule()\nconstant_map = torch._export.ConstantAttrMap()\nconstant_map.add(model.my_tensor, \"value1\")\n\n# This will trigger the vulnerable __contains__ line\nprint(model.my_tensor in constant_map)\n```\n\n```yaml\n- torch.ScriptObject\n- torch.Tensor\n- torch._library.fake_class_registry.FakeScriptObject\n- torch.nn.Module.register_buffer\n",
-    "python_code": "\nimport torch\n\nclass MyModule(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.register_buffer('my_tensor', torch.randn(3,3))\n        \n    def forward(self, x):\n        return x + self.my_tensor\n\nmodel = MyModule()\nconstant_map = torch._export.ConstantAttrMap()\nconstant_map.add(model.my_tensor, \"value1\")\n\n# This will trigger the vulnerable __contains__ line\nprint(model.my_tensor in constant_map)\n```\n\n```yaml\n- torch.ScriptObject\n- torch.Tensor\n- torch._library.fake_class_registry.FakeScriptObject\n- torch.nn.Module.register_buffer\n",
+    "summary": "\nThe ConstantAttrMap class is a custom mapping implementation that handles module constants (tensors and ScriptObjects) as keys. The vulnerable __contains__ method checks for key existence by:\n1. Using hash() for ScriptObjects which could lead to hash collisions\n2. Direct comparison for tensors and FakeScriptObjects\n3. Missing proper validation for hash collisions\n4. Being used internally for constant management in PyTorch's export system\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstants(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.register_buffer('buffer1', torch.randn(3))\n        self.register_buffer('buffer2', torch.randn(3))\n\n    def forward(self, x):\n        return x + self.buffer1 + self.buffer2\n\nmodel = ModelWithConstants()\n# This will trigger __contains__ during export\nexported = torch.export.export(model, (torch.randn(3),))\n",
     "api": [
-        "torch.ScriptObject",
-        "torch.Tensor",
-        "torch._library.fake_class_registry.FakeScriptObject",
-        "torch.nn.Module.register_buffer"
+        "nn.Module.register_buffer",
+        "torch.export.export",
+        "torch.ScriptObject"
     ]
 }

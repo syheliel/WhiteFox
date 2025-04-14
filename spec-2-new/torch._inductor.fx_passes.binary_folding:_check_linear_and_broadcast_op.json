@@ -1,13 +1,10 @@
 {
-    "summary": "\nThe _check_linear_and_broadcast_op function validates whether binary operations can be safely folded into linear layers. The vulnerable lines handle:\n1. Incomplete bias node validation which could lead to incorrect fusion when bias is not a module attribute\n2. Type promotion checks that may cause precision loss when folding operations with mixed dtypes\nThese checks are critical for:\n1. Ensuring mathematical correctness of fused operations\n2. Maintaining numerical precision during optimization\n3. Preventing invalid graph transformations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass LinearWithBinary(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 20)\n        self.register_buffer('scale', torch.rand(20))\n        \n    def forward(self, x):\n        x = self.linear(x)\n        x = x * self.scale  # This binary operation may trigger the vulnerable checks\n        return x\n```\n\n```yaml\n- nn.Linear\n- torch.addmm\n- torch.mm\n- torch.mul\n- torch.div\n- torch.add\n- torch.sub\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass LinearWithBinary(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 20)\n        self.register_buffer('scale', torch.rand(20))\n        \n    def forward(self, x):\n        x = self.linear(x)\n        x = x * self.scale  # This binary operation may trigger the vulnerable checks\n        return x\n```\n\n```yaml\n- nn.Linear\n- torch.addmm\n- torch.mm\n- torch.mul\n- torch.div\n- torch.add\n- torch.sub\n",
+    "summary": "\nThe _check_linear_and_broadcast_op function validates whether binary operations can be safely folded into linear operations (addmm/mm) in PyTorch graphs. The vulnerable lines handle:\n1. Argument checking for bias nodes in linear operations, which may be incomplete\n2. Type promotion checks between weights and other tensors, which could lead to precision loss\nThe function ensures binary operations can be fused with linear operations while maintaining numerical correctness and performance.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass LinearWithBias(nn.Module):\n    def __init__(self, in_features, out_features):\n        super().__init__()\n        self.linear = nn.Linear(in_features, out_features, bias=True)\n        \n    def forward(self, x):\n        # This could trigger the bias node check\n        return self.linear(x) + 0.5  # Adding a scalar that needs type promotion\n",
     "api": [
         "nn.Linear",
+        "nn.functional.linear",
         "torch.addmm",
-        "torch.mm",
-        "torch.mul",
-        "torch.div",
-        "torch.add",
-        "torch.sub"
+        "torch.mm"
     ]
 }

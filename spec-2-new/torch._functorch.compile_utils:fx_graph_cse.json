@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe fx_graph_cse function performs common subexpression elimination (CSE) on FX graphs in PyTorch. The vulnerable line uses hash for tensor comparison which could lead to:\n1. Hash collisions between different tensors\n2. Incorrect CSE optimizations due to false matches\n3. Potential precision issues in graph transformations\n4. Undetected differences between tensors with same hash\n```\n\n```python\nimport torch\nimport torch.fx as fx\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x, y):\n        a = x + y\n        b = x + y  # This duplicate operation should be eliminated by CSE\n        return a * b\n\nmodel = MyModule()\ntraced = fx.symbolic_trace(model)\noptimized_graph = fx_graph_cse(traced.graph)\n```\n\n```yaml\n- fx.symbolic_trace\n- fx.GraphModule\n- fx.Node\n- torch.fx.graph.Graph\n",
-    "python_code": "\nimport torch\nimport torch.fx as fx\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x, y):\n        a = x + y\n        b = x + y  # This duplicate operation should be eliminated by CSE\n        return a * b\n\nmodel = MyModule()\ntraced = fx.symbolic_trace(model)\noptimized_graph = fx_graph_cse(traced.graph)\n```\n\n```yaml\n- fx.symbolic_trace\n- fx.GraphModule\n- fx.Node\n- torch.fx.graph.Graph\n",
+    "summary": "\nThe fx_graph_cse function performs common subexpression elimination (CSE) on PyTorch FX graphs. The vulnerable line uses hash for tensor comparison which may lead to precision issues due to hash collisions. This is important because:\n1. Hash collisions could incorrectly identify different tensors as identical\n2. Precision errors could propagate through the graph\n3. The optimization might produce incorrect results silently\n4. Tensor comparisons should use exact value matching rather than hashing\n",
+    "python_code": "\nimport torch\nimport torch.fx\n\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        a = x * 2\n        b = x * 2  # This should be eliminated by CSE\n        return a + b\n\nmodel = SimpleModel()\ntraced = torch.fx.symbolic_trace(model)\noptimized = torch.fx.GraphModule(traced, torch.fx.graph_cse(traced.graph))\n",
     "api": [
-        "fx.symbolic_trace",
-        "fx.GraphModule",
-        "fx.Node",
-        "torch.fx.graph.Graph"
+        "torch.fx.symbolic_trace",
+        "torch.fx.GraphModule",
+        "torch.fx.graph_cse"
     ]
 }

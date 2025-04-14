@@ -1,18 +1,10 @@
 {
-    "summary": "\nThe post_grad_passes function applies a series of graph transformations and optimizations to a PyTorch FX GraphModule after gradient computation. These passes include:\n1. Dead code elimination\n2. Fusion of operations like batch norm and group norm\n3. Removal of no-op operations\n4. Removal of assertion operations\n5. Application of various pattern matching passes\n6. Communication fusion for distributed training\n7. Topological sorting\n8. Moving tensor constructors to GPU\n9. Reinplacing inplaceable operations\n10. Decomposing higher-order ops\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass SimpleModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, 3)\n        self.bn = nn.BatchNorm2d(16)\n        self.relu = nn.ReLU()\n        \n    def forward(self, x):\n        x = self.conv(x)\n        x = self.bn(x)\n        x = self.relu(x)\n        return x\n\nmodel = SimpleModel()\nx = torch.randn(1, 3, 32, 32)\ntraced = torch.fx.symbolic_trace(model)\n# The post_grad_passes would be automatically applied during training\n# or when explicitly optimizing the model\n```\n\n```yaml\n- nn.Conv2d\n- nn.BatchNorm2d\n- nn.ReLU\n- nn.Linear\n- nn.LayerNorm\n- nn.GroupNorm\n- nn.Dropout\n- functional.conv2d\n- functional.batch_norm\n- functional.layer_norm\n- functional.group_norm\n- functional.dropout\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass SimpleModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, 3)\n        self.bn = nn.BatchNorm2d(16)\n        self.relu = nn.ReLU()\n        \n    def forward(self, x):\n        x = self.conv(x)\n        x = self.bn(x)\n        x = self.relu(x)\n        return x\n\nmodel = SimpleModel()\nx = torch.randn(1, 3, 32, 32)\ntraced = torch.fx.symbolic_trace(model)\n# The post_grad_passes would be automatically applied during training\n# or when explicitly optimizing the model\n```\n\n```yaml\n- nn.Conv2d\n- nn.BatchNorm2d\n- nn.ReLU\n- nn.Linear\n- nn.LayerNorm\n- nn.GroupNorm\n- nn.Dropout\n- functional.conv2d\n- functional.batch_norm\n- functional.layer_norm\n- functional.group_norm\n- functional.dropout\n",
+    "summary": "\nThe post_grad_passes function applies a series of graph transformations and optimizations to a PyTorch FX GraphModule after gradient computation. These passes include:\n1. Dead code elimination\n2. Fusion of batch operations\n3. Removal of no-op operations\n4. Removal of assertion operations\n5. Application of various pattern matching passes\n6. Communication fusion for distributed training\n7. Graph stabilization through topological sorting\n8. Device optimization by moving constructors to GPU\n9. Reinplacing inplaceable operations\n10. Decomposition of higher-order ops\nThese transformations are critical for optimizing the computational graph before final compilation and execution.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass SimpleModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        self.relu = nn.ReLU()\n    \n    def forward(self, x):\n        x = self.linear(x)\n        x = self.relu(x)\n        return x\n\nmodel = SimpleModel()\ninput = torch.randn(1, 10)\noutput = model(input)\n",
     "api": [
-        "nn.Conv2d",
-        "nn.BatchNorm2d",
-        "nn.ReLU",
         "nn.Linear",
-        "nn.LayerNorm",
-        "nn.GroupNorm",
-        "nn.Dropout",
-        "functional.conv2d",
-        "functional.batch_norm",
-        "functional.layer_norm",
-        "functional.group_norm",
-        "functional.dropout"
+        "nn.ReLU",
+        "torch.randn",
+        "torch.Tensor"
     ]
 }

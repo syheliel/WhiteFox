@@ -1,0 +1,10 @@
+{
+    "summary": "The AotAutograd.__call__ method handles ahead-of-time autograd compilation for PyTorch models. The vulnerable line increments a counter for tracking AOT autograd usage. This is problematic because:1. The counter is a shared global resource\n2. No thread synchronization is used when incrementing",
+    "python_code": "class MyModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        return self.linear(x)\n\nmodel = MyModel()\nexample_input = torch.randn(1, 10)\ncompiled_model = torch.compile(model, backend='aot_eager')\noutput = compiled_model(example_input)\n",
+    "api": [
+        "nn.Linear",
+        "torch.compile",
+        "torch.fx.GraphModule",
+        "torch._dynamo.optimize"
+    ]
+}

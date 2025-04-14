@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe livevars_analysis function performs live variable analysis on Python bytecode instructions. The vulnerable line raises a NotImplementedError when encountering an unhandled opcode during analysis. This is problematic because:\n1. The function doesn't properly validate all possible opcode types before processing\n2. The error handling is too broad and could mask legitimate analysis cases\n3. Missing opcode handling could lead to incomplete analysis results\n4. The function assumes MAKE_CELL is the only special case needing handling\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass CustomModule(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # This would trigger bytecode generation that could include\n        # unhandled opcodes during live variable analysis\n        return x * self.weight\n```\n\n```yaml\n- nn.Module\n- nn.Parameter\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass CustomModule(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # This would trigger bytecode generation that could include\n        # unhandled opcodes during live variable analysis\n        return x * self.weight\n```\n\n```yaml\n- nn.Module\n- nn.Parameter\n",
+    "summary": "\nThe livevars_analysis function performs live variable analysis on Python bytecode instructions. The vulnerable line raises a NotImplementedError when encountering an unhandled opcode during analysis. This is problematic because:\n1. The function doesn't properly validate all possible opcode types before processing\n2. Missing opcode handling could lead to incorrect analysis results\n3. The error message exposes raw opcode names which could be security-sensitive\n4. There's no graceful fallback for unknown opcodes\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass CustomModule(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10))\n        \n    def forward(self, x):\n        # This could trigger bytecode with unhandled opcodes\n        # when PyTorch compiles the graph\n        return x * self.weight\n\nmodel = CustomModule()\nscripted = torch.jit.script(model)\n",
     "api": [
         "nn.Module",
-        "nn.Parameter"
+        "nn.Parameter",
+        "torch.jit.script"
     ]
 }

@@ -1,14 +1,12 @@
 {
-    "summary": "\nThe div_softmax_pattern function handles a specific softmax computation pattern where division is used for scaling. The vulnerable line performs the final computation of the scaled softmax values. This is important because:\n1. The division operation can introduce numerical instability\n2. The sign computation and multiplication could lead to precision loss\n3. The pattern is used in attention mechanisms and other neural network components\n4. Numerical errors here could propagate through the network\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ScaledSoftmax(nn.Module):\n    def __init__(self, dim=-1):\n        super().__init__()\n        self.dim = dim\n\n    def forward(self, x, scale):\n        # This mimics the vulnerable pattern\n        sign = torch.where(scale >= 0, 1, -1)\n        x = x * sign\n        max_ = torch.amax(x, dim=self.dim, keepdim=True)\n        return (x - max_) / (sign * scale)\n\n# Example usage\nmodel = ScaledSoftmax()\nx = torch.randn(3, 4)\nscale = torch.randn(4)  # Different scale per feature\noutput = model(x, scale)\n```\n\n```yaml\n- nn.Softmax\n- nn.LogSoftmax\n- nn.MultiheadAttention\n- torch.softmax\n- torch.log_softmax\n- torch.div\n- torch.where\n- torch.amax\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ScaledSoftmax(nn.Module):\n    def __init__(self, dim=-1):\n        super().__init__()\n        self.dim = dim\n\n    def forward(self, x, scale):\n        # This mimics the vulnerable pattern\n        sign = torch.where(scale >= 0, 1, -1)\n        x = x * sign\n        max_ = torch.amax(x, dim=self.dim, keepdim=True)\n        return (x - max_) / (sign * scale)\n\n# Example usage\nmodel = ScaledSoftmax()\nx = torch.randn(3, 4)\nscale = torch.randn(4)  # Different scale per feature\noutput = model(x, scale)\n```\n\n```yaml\n- nn.Softmax\n- nn.LogSoftmax\n- nn.MultiheadAttention\n- torch.softmax\n- torch.log_softmax\n- torch.div\n- torch.where\n- torch.amax\n",
+    "summary": "\nThe div_softmax_pattern function handles a common softmax computation pattern where input values are divided by a scaling factor before softmax computation. The vulnerable line performs the scaled subtraction and division operations that are numerically unstable because:\n1. Division by small or zero values can cause overflow\n2. The scaling factor (sign * other) may amplify numerical errors\n3. The computation order affects numerical stability\n4. No safeguards against extreme values in the input\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ScaledSoftmax(nn.Module):\n    def __init__(self, dim=-1):\n        super().__init__()\n        self.dim = dim\n        \n    def forward(self, x, scale):\n        # This demonstrates the vulnerable pattern\n        max_val = torch.amax(x, dim=self.dim, keepdim=True)\n        scaled = (x - max_val) / scale\n        return torch.softmax(scaled, dim=self.dim)\n\n# Example usage\nmodel = ScaledSoftmax()\nx = torch.randn(3, 4)\nscale = 1e-6  # Small scale value that could cause instability\noutput = model(x, scale)\n",
     "api": [
         "nn.Softmax",
         "nn.LogSoftmax",
-        "nn.MultiheadAttention",
+        "nn.functional.softmax",
+        "nn.functional.log_softmax",
         "torch.softmax",
-        "torch.log_softmax",
-        "torch.div",
-        "torch.where",
-        "torch.amax"
+        "torch.log_softmax"
     ]
 }

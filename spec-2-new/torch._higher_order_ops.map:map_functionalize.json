@@ -1,8 +1,8 @@
 {
-    "summary": "\nThe map_functionalize function handles functional transformations for the map higher-order operation in PyTorch. The vulnerable line checks for potential input mutations during the map operation, which is important because:\n1. Functional transformations require pure functions without side effects\n2. Input mutations would violate functional programming principles\n3. The check prevents incorrect behavior in autograd and compilation\n4. The current error message could be more specific about which input was mutated\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\ndef f(x):\n    x.mul_(2)  # This will mutate the input\n    return x\n\nxs = torch.randn(2, 3)\ntry:\n    result = torch._higher_order_ops.map(f, xs)\nexcept RuntimeError as e:\n    print(\"Caught mutation error:\", e)\n```\n\n```yaml\n- torch._higher_order_ops.map\n- torch.Tensor.mul_\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\ndef f(x):\n    x.mul_(2)  # This will mutate the input\n    return x\n\nxs = torch.randn(2, 3)\ntry:\n    result = torch._higher_order_ops.map(f, xs)\nexcept RuntimeError as e:\n    print(\"Caught mutation error:\", e)\n```\n\n```yaml\n- torch._higher_order_ops.map\n- torch.Tensor.mul_\n",
+    "summary": "\nThe map_functionalize function handles functionalization of the map operation in PyTorch. The vulnerable line checks for potential input mutations during the map operation, which is important because:\n1. Functional transformations require pure functions without side effects\n2. Input mutations would violate the functional programming paradigm\n3. The error message could be more specific about which input was mutated\n4. Missing proper mutation detection could lead to incorrect results in functional contexts\n",
+    "python_code": "\nimport torch\n\ndef f(x, y):\n    x.add_(1)  # This mutates the input tensor\n    return x + y\n\nxs = torch.randn(2, 3)\nargs = (torch.randn(3),)\ntry:\n    result = torch._higher_order_ops.map(f, xs, *args)\nexcept RuntimeError as e:\n    print(e)  # Will trigger the mutation check\n",
     "api": [
         "torch._higher_order_ops.map",
-        "torch.Tensor.mul_"
+        "torch.Tensor.add_"
     ]
 }

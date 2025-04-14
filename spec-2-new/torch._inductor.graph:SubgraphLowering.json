@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe SubgraphLowering class handles lowering subgraphs within PyTorch's Inductor compiler. The vulnerable line initializes the parent class without validating compatibility with the parent graph. This is important because:\n1. Subgraphs must be compatible with their parent graphs\n2. Missing validation could lead to incorrect subgraph integration\n3. Parent graph attributes may be incorrectly inherited\n4. Could cause silent errors during compilation or execution\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ParentModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, 3)\n        \n    def forward(self, x):\n        return self.conv(x)\n\n# This could trigger the issue if SubgraphLowering is used incorrectly\n# without proper parent graph validation\nmodel = ParentModel()\nx = torch.randn(1, 3, 32, 32)\nsubgraph = torch.fx.symbolic_trace(model)\n```\n\n```yaml\n- nn.Module\n- torch.fx.symbolic_trace\n- torch.nn.Conv2d\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ParentModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, 3)\n        \n    def forward(self, x):\n        return self.conv(x)\n\n# This could trigger the issue if SubgraphLowering is used incorrectly\n# without proper parent graph validation\nmodel = ParentModel()\nx = torch.randn(1, 3, 32, 32)\nsubgraph = torch.fx.symbolic_trace(model)\n```\n\n```yaml\n- nn.Module\n- torch.fx.symbolic_trace\n- torch.nn.Conv2d\n",
+    "summary": "\nThe SubgraphLowering class handles lowering of subgraphs within PyTorch graphs. The vulnerable line initializes the parent class without validating the parent graph argument. This is important because:\n1. The parent graph must be compatible with the subgraph\n2. Missing validation could lead to runtime errors if incompatible graphs are passed\n3. The subgraph relies on the parent graph's wrapper code and device info\n4. Invalid parent graphs could cause incorrect code generation or crashes\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ParentModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, 3)\n    \n    def forward(self, x):\n        return self.conv(x)\n\n# This could trigger the issue if passed an invalid parent graph\nsubgraph = SubgraphLowering(parent=None, gm=torch.fx.GraphModule(torch.nn.Module(), torch.fx.Graph()))\n",
     "api": [
         "nn.Module",
-        "torch.fx.symbolic_trace",
-        "torch.nn.Conv2d"
+        "torch.fx.GraphModule",
+        "torch.fx.Graph"
     ]
 }

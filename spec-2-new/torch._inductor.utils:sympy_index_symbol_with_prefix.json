@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe sympy_index_symbol_with_prefix function generates symbolic index variables for use in shape computations. The vulnerable line asserts that the prefix argument is not SymT.SIZE, which is important because:\n1. SIZE prefixes are reserved for shape/stride symbols allocated before Inductor\n2. Using SIZE prefix could lead to symbol naming conflicts\n3. Missing validation could allow invalid symbol prefixes to be created\n4. The function assumes index variables are non-negative (>=0) unlike shape symbols which are positive (>0)\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ShapeModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would trigger the assertion if prefix validation was bypassed\n        size = x.size()[0]  # Creates size-related symbols\n        return x + size  # Mixes size and index symbols\n```\n\n```yaml\n- nn.Module.size\n- torch.Tensor.size\n- torch.sym_int\n- torch._C.SymIntNode\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ShapeModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would trigger the assertion if prefix validation was bypassed\n        size = x.size()[0]  # Creates size-related symbols\n        return x + size  # Mixes size and index symbols\n```\n\n```yaml\n- nn.Module.size\n- torch.Tensor.size\n- torch.sym_int\n- torch._C.SymIntNode\n",
+    "summary": "\nThe sympy_index_symbol_with_prefix function generates symbolic index variables for use in shape computations. The vulnerable line asserts that the prefix argument is not SymT.SIZE, which is important because:\n1. SIZE prefixes are reserved for shape/stride symbols\n2. Index variables should use different prefixes to avoid confusion\n3. Missing validation could lead to incorrect symbolic computations if SIZE prefix is used\n4. The function assumes index variables are non-negative integers\n",
+    "python_code": "\nimport torch\nimport sympy\n\ndef generate_index_var():\n    # Using a valid prefix that's not SymT.SIZE\n    idx = sympy.Symbol(\"i0\", integer=True, nonnegative=True)\n    return idx\n\n# Example usage in a tensor operation\nx = torch.randn(10, 10)\nidx = generate_index_var()\ny = x[idx % 5, :]  # Using symbolic index\n",
     "api": [
-        "nn.Module.size",
-        "torch.Tensor.size",
-        "torch.sym_int",
-        "torch._C.SymIntNode"
+        "torch.Symbol",
+        "sympy.Symbol",
+        "sympy.IndexedBase"
     ]
 }

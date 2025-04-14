@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe llvm_target function determines the appropriate LLVM target CPU flags based on system capabilities. The vulnerable line hardcodes \"llvm -mcpu=skylake-avx512\" when AVX512 is detected in /proc/cpuinfo. This is problematic because:\n1. The CPU flag detection is simplistic and may not match actual hardware capabilities\n2. Hardcoded values may not be optimal for all AVX512-capable systems\n3. Could lead to suboptimal performance or compatibility issues\n4. Doesn't account for different AVX512 implementations or generations\n```\n\n```python\nimport torch\n\ndef check_llvm_target():\n    # This will trigger the llvm_target function internally\n    # when torch.compile is used with TVM backend\n    model = torch.nn.Linear(10, 10)\n    compiled_model = torch.compile(model, backend=\"tvm\")\n    input = torch.randn(1, 10)\n    output = compiled_model(input)\n    return output\n```\n\n```yaml\n- torch.compile\n- torch.nn.Linear\n",
-    "python_code": "\nimport torch\n\ndef check_llvm_target():\n    # This will trigger the llvm_target function internally\n    # when torch.compile is used with TVM backend\n    model = torch.nn.Linear(10, 10)\n    compiled_model = torch.compile(model, backend=\"tvm\")\n    input = torch.randn(1, 10)\n    output = compiled_model(input)\n    return output\n```\n\n```yaml\n- torch.compile\n- torch.nn.Linear\n",
+    "summary": "\nThe llvm_target function determines the appropriate LLVM target CPU flags based on system capabilities. The vulnerable line returns a hardcoded \"skylake-avx512\" CPU target when AVX512 is detected in /proc/cpuinfo. This is problematic because:\n1. The detection only checks for AVX512 presence in /proc/cpuinfo\n2. The hardcoded skylake-avx512 target may not match all AVX512-capable CPUs\n3. Different AVX512-capable CPUs may require different optimization flags\n4. Missing validation could lead to suboptimal performance or incorrect optimizations\n",
+    "python_code": "\nimport torch\n\ndef check_llvm_target():\n    # This will trigger the llvm_target() function internally\n    # when PyTorch needs to compile operations for CPU\n    x = torch.randn(10, 10)\n    y = torch.randn(10, 10)\n    z = x @ y  # Matrix multiplication that may use CPU optimizations\n    return z\n\nresult = check_llvm_target()\n",
     "api": [
         "torch.compile",
-        "torch.nn.Linear"
+        "torch.jit.trace",
+        "torch.jit.script"
     ]
 }

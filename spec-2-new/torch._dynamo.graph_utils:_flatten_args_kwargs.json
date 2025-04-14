@@ -1,16 +1,9 @@
 {
-    "summary": "\nThe _flatten_args_kwargs function is responsible for flattening input arguments including handling slice objects recursively. The vulnerable lines involve:\n1. Recursively flattening slice components (start, stop, step) which may lose precision information during the flattening process\n2. Appending arguments to the flattened list without type checking, which could lead to unexpected behavior if invalid types are passed\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass SliceModel(nn.Module):\n    def __init__(self):\n        super(SliceModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Using slice operation which will be processed by _flatten_args_kwargs\n        x = x[:, 1:5:2]  # This slice will be recursively flattened\n        x = self.linear(x)\n        return x\n\nmodel = SliceModel()\ninput_tensor = torch.randn(5, 10)\noutput = model(input_tensor)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv1d\n- nn.Conv2d\n- nn.Conv3d\n- nn.MaxPool1d\n- nn.MaxPool2d\n- nn.MaxPool3d\n- nn.AvgPool1d\n- nn.AvgPool2d\n- nn.AvgPool3d\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass SliceModel(nn.Module):\n    def __init__(self):\n        super(SliceModel, self).__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Using slice operation which will be processed by _flatten_args_kwargs\n        x = x[:, 1:5:2]  # This slice will be recursively flattened\n        x = self.linear(x)\n        return x\n\nmodel = SliceModel()\ninput_tensor = torch.randn(5, 10)\noutput = model(input_tensor)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv1d\n- nn.Conv2d\n- nn.Conv3d\n- nn.MaxPool1d\n- nn.MaxPool2d\n- nn.MaxPool3d\n- nn.AvgPool1d\n- nn.AvgPool2d\n- nn.AvgPool3d\n",
+    "summary": "\nThe _flatten_args_kwargs function is responsible for flattening arguments and keyword arguments, including handling slice objects by recursively flattening their components (start, stop, step). The vulnerable lines:\n1. Recursively flattening slice components may lose precision information during the flattening process\n2. Appends arguments to the flattened list without type checking, which could lead to unexpected behavior\n",
+    "python_code": "\nimport torch\n\ndef process_slice():\n    # Create a slice with floating point values\n    my_slice = slice(0.123456789, 1.987654321, 0.000001)\n    \n    # This would trigger the recursive flattening of slice components\n    result = torch.utils._pytree.tree_flatten(my_slice)\n    return result\n\nprocess_slice()\n",
     "api": [
-        "nn.Linear",
-        "nn.Conv1d",
-        "nn.Conv2d",
-        "nn.Conv3d",
-        "nn.MaxPool1d",
-        "nn.MaxPool2d",
-        "nn.MaxPool3d",
-        "nn.AvgPool1d",
-        "nn.AvgPool2d",
-        "nn.AvgPool3d"
+        "torch.utils._pytree.tree_flatten",
+        "torch.utils._pytree.tree_unflatten",
+        "torch.utils._pytree.register_pytree_node"
     ]
 }

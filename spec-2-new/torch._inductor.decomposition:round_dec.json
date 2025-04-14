@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe round_dec function handles decimal rounding of tensors by scaling values by 10^decimals before rounding and then scaling back. The vulnerable line calculates the scaling factor using floating point exponentiation, which can introduce precision errors because:\n1. Floating point operations are not exact\n2. The 10.0**decimals calculation may have small errors\n3. These errors propagate through the rounding operation\n4. Could lead to incorrect rounding results for certain decimal values\n```\n\n```python\nimport torch\n\nx = torch.tensor([1.2345, 5.6789])\nrounded = torch.round(x * (10.0**2)) * (1.0 / (10.0**2))  # Round to 2 decimal places\n```\n\n```yaml\n- torch.round\n- torch.Tensor.round\n",
-    "python_code": "\nimport torch\n\nx = torch.tensor([1.2345, 5.6789])\nrounded = torch.round(x * (10.0**2)) * (1.0 / (10.0**2))  # Round to 2 decimal places\n```\n\n```yaml\n- torch.round\n- torch.Tensor.round\n",
+    "summary": "\nThe round_dec function performs rounding of a tensor to a specified number of decimal places. The vulnerable line calculates 10 raised to the power of decimals, which is used to scale the input before and after rounding. This is important because:\n1. Floating-point exponentiation can introduce precision errors\n2. These errors may propagate through the rounding operation\n3. The final result may not match exact decimal rounding expectations\n4. Precision issues could affect downstream calculations\n",
+    "python_code": "\nimport torch\n\nx = torch.tensor([1.23456789])\nrounded = torch.round(x * (10.0**2)) * (1.0 / (10.0**2))  # Round to 2 decimal places\n",
     "api": [
         "torch.round",
-        "torch.Tensor.round"
+        "torch.Tensor.round",
+        "torch.Tensor.round_"
     ]
 }

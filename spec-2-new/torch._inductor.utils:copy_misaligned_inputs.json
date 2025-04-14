@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe copy_misaligned_inputs function handles copying misaligned tensor inputs to ensure proper memory alignment. The vulnerable line checks that inputs are torch.Tensor instances before copying. This is important because:\n1. The function assumes all inputs are tensors for proper memory operations\n2. Missing type checks could lead to runtime errors with non-tensor inputs\n3. The function performs low-level memory operations requiring tensor-specific properties\n4. Input validation is needed to prevent crashes with invalid input types\n```\n\n```python\nimport torch\n\ndef process_inputs(inputs):\n    # This will trigger the assert when non-tensor inputs are passed\n    torch._inductor.utils.copy_misaligned_inputs(inputs, [0])\n\n# Example that would trigger the vulnerable line\nprocess_inputs([torch.randn(3), \"string_input\"])\n```\n\n```yaml\n- torch.Tensor\n- torch.is_tensor\n- isinstance\n",
-    "python_code": "\nimport torch\n\ndef process_inputs(inputs):\n    # This will trigger the assert when non-tensor inputs are passed\n    torch._inductor.utils.copy_misaligned_inputs(inputs, [0])\n\n# Example that would trigger the vulnerable line\nprocess_inputs([torch.randn(3), \"string_input\"])\n```\n\n```yaml\n- torch.Tensor\n- torch.is_tensor\n- isinstance\n",
+    "summary": "\nThe copy_misaligned_inputs function handles copying misaligned tensor inputs to ensure proper memory alignment. The vulnerable line checks that the input is a torch.Tensor before copying. This is important because:\n1. The function assumes tensor operations like data_ptr() and clone_preserve_strides()\n2. Other input types (int, SymInt) would cause runtime errors\n3. Missing validation could lead to crashes if non-tensor inputs are passed\n4. The function is used in critical paths for memory optimization\n",
+    "python_code": "\nimport torch\n\ndef process_inputs(inputs):\n    # This could trigger the assertion if inputs contains non-tensor elements\n    copy_misaligned_inputs(inputs, [0, 1])\n\n# Example that would trigger the vulnerable line\ninputs = [torch.randn(10), 42]  # Contains both tensor and int\nprocess_inputs(inputs)\n",
     "api": [
         "torch.Tensor",
-        "torch.is_tensor",
-        "isinstance"
+        "torch.clone",
+        "torch.as_strided"
     ]
 }

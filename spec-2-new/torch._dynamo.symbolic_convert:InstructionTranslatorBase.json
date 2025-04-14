@@ -1,10 +1,10 @@
 {
-    "summary": "\nThe stack_op function handles Python stack operations during symbolic execution in PyTorch's Dynamo compiler. The vulnerable line performs function calls without proper type checking or precision handling, which could lead to:\n1. Precision loss when mixing different numeric types\n2. Potential security issues from unsanitized inputs\n3. Missing quantization support for tensor operations\n4. Incomplete argument validation that could cause runtime errors\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass PrecisionLossModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Mixed precision inputs without proper handling\n        x_half = x.half()\n        x_float = x.float()\n        return self.linear(x_half + x_float)  # Triggers stack_op vulnerability\n```\n\n```yaml\n- nn.Linear\n- torch.half\n- torch.float\n- torch.add\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass PrecisionLossModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Mixed precision inputs without proper handling\n        x_half = x.half()\n        x_float = x.float()\n        return self.linear(x_half + x_float)  # Triggers stack_op vulnerability\n```\n\n```yaml\n- nn.Linear\n- torch.half\n- torch.float\n- torch.add\n",
+    "summary": "\nThe stack_op function is a decorator that converts Python bytecode stack operations into symbolic execution operations in PyTorch's Dynamo. The vulnerable line handles function calls on the stack, which could lead to precision loss or security issues due to insufficient type checking and input validation. Key concerns:\n1. Potential precision loss when handling mixed precision inputs\n2. Lack of input sanitization in function calls\n3. Missing quantization handling for tensor operations\n4. Insufficient argument validation for stack operations\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MixedPrecisionModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Mixed precision input without validation\n        return self.layer(x.float()) if x.dtype == torch.half else self.layer(x)\n",
     "api": [
         "nn.Linear",
-        "torch.half",
         "torch.float",
-        "torch.add"
+        "torch.half",
+        "torch.Tensor.dtype"
     ]
 }

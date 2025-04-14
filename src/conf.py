@@ -11,7 +11,7 @@ logger.add(
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{function}</cyan> | <cyan>{file.path}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     level="INFO"
 )
-TORCH_BASE = Path("/home/synsyn/pytorch").resolve()
+TORCH_BASE = Path("/lustre/home/2201213135/pytorch").resolve()
 CHROMADB_PATH = (Path(__file__).parent.parent / "vectordb" ).resolve()
 CHROMADB_PATH.mkdir(parents=True, exist_ok=True)
 

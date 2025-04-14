@@ -1,9 +1,14 @@
 {
-    "summary": "\nThe cat function in PyTorch handles concatenation of tensors along a specified dimension. The vulnerable line checks if there's only one tensor in the filtered input list and returns a clone of it. This special handling for single tensor input may miss edge cases because:\n1. It bypasses normal concatenation logic for single inputs\n2. The clone operation might not preserve all tensor properties\n3. Edge cases with empty tensors or unusual shapes might not be handled correctly\n4. The behavior differs from the general concatenation case\n```\n\n```python\nimport torch\n\n# Single tensor case that triggers the vulnerable line\nx = torch.randn(3, 4)\nresult = torch.cat([x])  # Will trigger the single tensor path\n```\n\n```yaml\n- torch.cat\n- torch.concat\n- torch.concatenate\n",
-    "python_code": "\nimport torch\n\n# Single tensor case that triggers the vulnerable line\nx = torch.randn(3, 4)\nresult = torch.cat([x])  # Will trigger the single tensor path\n```\n\n```yaml\n- torch.cat\n- torch.concat\n- torch.concatenate\n",
+    "summary": "\nThe cat function in PyTorch handles concatenation of tensors along a specified dimension. The vulnerable line checks if there's only one tensor after filtering empty tensors, and returns a clone of that tensor. This optimization could miss edge cases where:\n1. The single remaining tensor has unexpected properties\n2. The filtering of empty tensors wasn't complete\n3. Memory format or other tensor attributes aren't properly preserved\n4. Special tensor types (like sparse or quantized) aren't handled correctly\n",
+    "python_code": "\nimport torch\n\n# Create a tensor and an empty tensor\nx = torch.randn(3, 4)\nempty = torch.empty(0)\n\n# Concatenate them (empty tensor will be filtered out)\nresult = torch.cat([x, empty])\n\n# This will trigger the vulnerable line since only one non-empty tensor remains\nprint(result)\n",
     "api": [
         "torch.cat",
         "torch.concat",
-        "torch.concatenate"
+        "torch.stack",
+        "torch.hstack",
+        "torch.vstack",
+        "torch.dstack",
+        "torch.column_stack",
+        "torch.row_stack"
     ]
 }

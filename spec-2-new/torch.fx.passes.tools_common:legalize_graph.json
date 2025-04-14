@@ -1,9 +1,10 @@
 {
-    "summary": "\nThe legalize_graph function is responsible for topologically sorting the nodes in a GraphModule to ensure proper execution order. The vulnerable line initializes a dictionary to track node dependencies without validating the input GraphModule. Key issues:\n1. Missing input validation could lead to crashes if gm.graph.nodes is invalid\n2. The hardcoded PRIORITIZED_OPS list may miss important quantization-sensitive operations\n3. The function assumes all nodes can be properly sorted but may fail on cyclic graphs\n4. The topological sort is critical for correct execution of the graph\n```\n\n```python\nimport torch\nfrom torch.fx import symbolic_trace\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x, y):\n        return torch.add(x, y)\n\nmodel = MyModule()\ntraced = symbolic_trace(model)\nlegalized = torch.fx.passes.legalize_graph(traced)\n```\n\n```yaml\n- torch.fx.symbolic_trace\n- torch.nn.Module\n- torch.add\n",
-    "python_code": "\nimport torch\nfrom torch.fx import symbolic_trace\n\nclass MyModule(torch.nn.Module):\n    def forward(self, x, y):\n        return torch.add(x, y)\n\nmodel = MyModule()\ntraced = symbolic_trace(model)\nlegalized = torch.fx.passes.legalize_graph(traced)\n```\n\n```yaml\n- torch.fx.symbolic_trace\n- torch.nn.Module\n- torch.add\n",
+    "summary": "\nThe legalize_graph function is responsible for topologically sorting nodes in a GraphModule to ensure proper execution order. The vulnerable line initializes a dictionary to track node dependencies without validating the input graph module. Key issues:\n1. Missing input validation could lead to crashes if gm.graph.nodes is invalid\n2. The function assumes the input is a properly constructed GraphModule\n3. No checks for None or malformed graph structures\n4. Dependency tracking could fail silently with bad inputs\n",
+    "python_code": "\nimport torch\nimport torch.fx\n\nclass SimpleModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = SimpleModel()\ngm = torch.fx.symbolic_trace(model)\n# Potentially dangerous if gm.graph gets corrupted\nlegalized = torch.fx.experimental.optimization.legalize_graph(gm)\n",
     "api": [
         "torch.fx.symbolic_trace",
-        "torch.nn.Module",
-        "torch.add"
+        "torch.fx.GraphModule",
+        "torch.fx.Graph",
+        "torch.nn.Module"
     ]
 }

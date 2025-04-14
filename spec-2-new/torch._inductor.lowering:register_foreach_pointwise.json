@@ -1,10 +1,11 @@
 {
-    "summary": "\nThe `inner` function is a helper function used in foreach operations that applies a pointwise operation to each element in a list of tensors. The vulnerable line indicates potential precision issues when accumulating results across multiple operations in foreach loops. This is important because:\n1. Foreach operations process multiple tensors in parallel\n2. Floating-point arithmetic can accumulate rounding errors\n3. Precision errors may compound across multiple operations\n4. Results may differ from sequential execution\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ForeachAdd(nn.Module):\n    def __init__(self):\n        super(ForeachAdd, self).__init__()\n        \n    def forward(self, x, y):\n        # Using foreach_add operation\n        return torch._foreach_add(x, y)\n```\n\n```yaml\n- torch._foreach_add\n- torch._foreach_mul\n- torch._foreach_sub\n- torch._foreach_div\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ForeachAdd(nn.Module):\n    def __init__(self):\n        super(ForeachAdd, self).__init__()\n        \n    def forward(self, x, y):\n        # Using foreach_add operation\n        return torch._foreach_add(x, y)\n```\n\n```yaml\n- torch._foreach_add\n- torch._foreach_mul\n- torch._foreach_sub\n- torch._foreach_div\n",
+    "summary": "\nThe `inner` function is a wrapper used in foreach operations that applies a pointwise function to multiple tensors. The vulnerable line returns the result of applying the function, but foreach operations may accumulate precision errors due to:\n1. Repeated application of the pointwise operation\n2. Potential loss of precision when fusing multiple operations\n3. Differences from eager mode execution\n4. Lack of explicit error bounds control\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ForeachExample(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weights = [nn.Parameter(torch.randn(10)) for _ in range(5)]\n        \n    def forward(self, x):\n        # This foreach operation may accumulate precision errors\n        return torch._foreach_add(self.weights, x)\n",
     "api": [
         "torch._foreach_add",
         "torch._foreach_mul",
         "torch._foreach_sub",
-        "torch._foreach_div"
+        "torch._foreach_div",
+        "torch._foreach_pow"
     ]
 }

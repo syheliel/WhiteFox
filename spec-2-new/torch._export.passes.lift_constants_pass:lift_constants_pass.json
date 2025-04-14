@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe lift_constants_pass function handles lifting constants (tensors or custom classes) as inputs to the graph in PyTorch. The vulnerable lines involve:\n1. Potential precision loss when converting tensors in fake mode using fake_mode.from_tensor()\n2. Direct access to tensor data without validation when handling parameters, which could lead to security issues if the tensor is malformed\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstants(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = torch.randn(3, 3)\n        self.register_buffer('buffer', torch.ones(2, 2))\n        \n    def forward(self, x):\n        return x @ self.weight + self.buffer\n\nmodel = ModelWithConstants()\ntraced = torch.export.export(model, (torch.randn(2, 3),))\n```\n\n```yaml\n- nn.Module\n- torch.export.export\n- torch.nn.Parameter\n- torch.Tensor.data\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstants(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = torch.randn(3, 3)\n        self.register_buffer('buffer', torch.ones(2, 2))\n        \n    def forward(self, x):\n        return x @ self.weight + self.buffer\n\nmodel = ModelWithConstants()\ntraced = torch.export.export(model, (torch.randn(2, 3),))\n```\n\n```yaml\n- nn.Module\n- torch.export.export\n- torch.nn.Parameter\n- torch.Tensor.data\n",
+    "summary": "\nThe lift_constants_pass function handles lifting constants (tensors or custom classes) as inputs to the graph in PyTorch's export system. The vulnerable lines involve:\n1. Precision loss when converting tensors to fake mode without proper handling of numerical precision\n2. Direct access to tensor data without validation when handling parameters, which could bypass security checks\nKey concerns:\n1. Fake tensor conversion may lose precision information\n2. Direct data access bypasses PyTorch's security mechanisms\n3. No validation of tensor contents before processing\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstant(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n        self.register_buffer('buffer', torch.ones(3, 3) * 0.5)\n\n    def forward(self, x):\n        return x @ self.weight + self.buffer\n\nmodel = ModelWithConstant()\nscripted = torch.jit.script(model)\n",
     "api": [
-        "nn.Module",
-        "torch.export.export",
-        "torch.nn.Parameter",
-        "torch.Tensor.data"
+        "nn.Parameter",
+        "torch.jit.script",
+        "torch.nn.Module.register_buffer"
     ]
 }

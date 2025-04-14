@@ -1,8 +1,8 @@
 {
-    "summary": "\nThe ceildiv function performs ceiling division on either integers or sympy expressions. The vulnerable line performs type checking to ensure both numerator and denominator are integers before performing the division. This is important because:\n1. The function handles both integer and symbolic division cases\n2. Incorrect type checking could lead to incorrect mathematical results\n3. The assertion assumes inputs are either integers or sympy expressions\n4. Missing proper validation could cause runtime errors with invalid input types\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass CeilDivModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This will trigger the assertion when x contains sympy expressions\n        return torch.ops.inductor.ceildiv(x.shape[0], 4)\n```\n\n```yaml\n- nn.Module\n- torch.ops.inductor.ceildiv\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass CeilDivModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This will trigger the assertion when x contains sympy expressions\n        return torch.ops.inductor.ceildiv(x.shape[0], 4)\n```\n\n```yaml\n- nn.Module\n- torch.ops.inductor.ceildiv\n",
+    "summary": "\nThe ceildiv function performs ceiling division on numeric inputs, handling both integers and sympy expressions. The vulnerable line checks that inputs are integers before performing runtime division, but fails to properly validate sympy expressions. This is important because:\n1. The function needs to handle both concrete integers and symbolic expressions\n2. Inadequate type checking could lead to incorrect results or errors\n3. The function assumes consistent input types for correct behavior\n4. Missing validation could cause issues when mixing integer and symbolic inputs\n",
+    "python_code": "\nimport torch\nimport sympy\n\ndef test_ceildiv():\n    x = sympy.Symbol('x')\n    # This will trigger the assertion when x is not an integer\n    result = torch._inductor.utils.ceildiv(x, 2)\n    return result\n",
     "api": [
-        "nn.Module",
-        "torch.ops.inductor.ceildiv"
+        "torch._inductor.utils.ceildiv",
+        "sympy.Symbol"
     ]
 }

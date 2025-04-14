@@ -5,7 +5,8 @@ import click
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 from src.llm_client import get_openai,ALL_MODEL
 from src.conf import OPTINFO_PATH, TORCH_BASE
-def count_tokens(text, model_name="deepseek-ai/DeepSeek-V3"):
+from typing import List
+def count_tokens(text:str, model_name:str="deepseek-ai/DeepSeek-V3") -> int:
     """
     Count the number of tokens in the given text using the DeepSeek tokenizer.
     
@@ -20,7 +21,7 @@ def count_tokens(text, model_name="deepseek-ai/DeepSeek-V3"):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     
     # Tokenize the text
-    tokens = tokenizer.encode(text)
+    tokens:List[int] = tokenizer.encode(text)
     
     # Return the number of tokens
     return len(tokens)

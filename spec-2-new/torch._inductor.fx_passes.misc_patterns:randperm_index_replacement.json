@@ -1,9 +1,10 @@
 {
-    "summary": "\nThe randperm_index_replacement function handles tensor indexing operations with a random permutation. The vulnerable line uses unsafe indexing which:\n1. Bypasses bounds checking for performance\n2. Can lead to undefined behavior if indices are invalid\n3. May cause precision issues with out-of-bounds access\n4. Assumes indices from randperm are always valid\n```\n\n```python\nimport torch\n\nx = torch.randn(4, 8)\nindex = torch.randperm(x.shape[0])[:2]\nresult = torch.ops.aten._unsafe_index(x, (index,))\n```\n\n```yaml\n- torch.randperm\n- torch.ops.aten._unsafe_index\n- torch.ops.aten.index\n",
-    "python_code": "\nimport torch\n\nx = torch.randn(4, 8)\nindex = torch.randperm(x.shape[0])[:2]\nresult = torch.ops.aten._unsafe_index(x, (index,))\n```\n\n```yaml\n- torch.randperm\n- torch.ops.aten._unsafe_index\n- torch.ops.aten.index\n",
+    "summary": "\nThe randperm_index_replacement function replaces a safe indexing operation with an unsafe version for performance optimization. The vulnerable line uses torch.ops.aten._unsafe_index which bypasses bounds checking, potentially leading to:\n1. Memory access violations if indices are out of bounds\n2. Undefined behavior with invalid indices\n3. Precision issues if indices point to invalid memory locations\n4. Silent corruption of data when indices are incorrect\n",
+    "python_code": "\nimport torch\n\nx = torch.randn(4, 8)\nindex = torch.randperm(4)[:2]  # Get 2 random indices\nresult = torch.ops.aten._unsafe_index(x, (index,))  # Unsafe indexing\n",
     "api": [
-        "torch.randperm",
+        "torch.ops.aten.index",
         "torch.ops.aten._unsafe_index",
-        "torch.ops.aten.index"
+        "torch.index_select",
+        "torch.gather"
     ]
 }

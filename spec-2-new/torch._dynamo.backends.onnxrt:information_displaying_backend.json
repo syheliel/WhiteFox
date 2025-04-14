@@ -1,8 +1,7 @@
 {
-    "summary": "\nThe information_displaying_backend function is called when ONNX Runtime backend dependencies are not properly installed. The vulnerable line raises an ImportError with detailed debugging instructions that reveal internal implementation details. This is problematic because:\n1. The error message exposes internal file paths and debugging procedures\n2. Excessive detail could aid attackers in understanding system internals\n3. Security best practices recommend minimal error disclosure\n4. The message includes implementation-specific troubleshooting steps\n```\n\n```python\nimport torch\n\ntry:\n    torch.compile(backend=\"onnxrt\")\nexcept ImportError as e:\n    print(\"ONNX Runtime backend not available\")\n```\n\n```yaml\n- torch.compile\n- torch.onnx.is_onnxrt_backend_supported\n",
-    "python_code": "\nimport torch\n\ntry:\n    torch.compile(backend=\"onnxrt\")\nexcept ImportError as e:\n    print(\"ONNX Runtime backend not available\")\n```\n\n```yaml\n- torch.compile\n- torch.onnx.is_onnxrt_backend_supported\n",
+    "summary": "\nThe information_displaying_backend function is called when ONNX Runtime backend support is not available. The vulnerable line raises an ImportError with detailed internal implementation information that could potentially expose sensitive system details. This is problematic because:\n1. Error messages should be user-friendly but not reveal implementation details\n2. Excessive detail could aid attackers in understanding system internals\n3. Security best practices recommend limiting error message details\n4. The message includes specific package names and debugging procedures\n",
+    "python_code": "\nimport torch\n\ntry:\n    torch.compile(backend=\"onnxrt\")\nexcept ImportError as e:\n    print(f\"Caught error: {e}\")\n",
     "api": [
-        "torch.compile",
-        "torch.onnx.is_onnxrt_backend_supported"
+        "torch.compile"
     ]
 }

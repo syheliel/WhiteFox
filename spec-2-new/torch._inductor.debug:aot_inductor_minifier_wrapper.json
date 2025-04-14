@@ -1,9 +1,8 @@
 {
-    "summary": "\nThe aot_inductor_minifier_wrapper function is used for debugging and minifying PyTorch models compiled with AOT Inductor. The vulnerable line directly accesses the module from an exported program without validation, which could lead to issues if:\n1. The input is not a valid ExportedProgram\n2. The module extraction fails\n3. The module is corrupted or malformed\n4. The exported program is in an invalid state\n```\n\n```python\nimport torch\nimport torch._export\n\nclass MyModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = MyModel()\ninputs = (torch.randn(3),)\nexported = torch._export.export(model, inputs)\n\n# This could potentially fail if exported is corrupted\ntorch._inductor.debug.aot_inductor_minifier_wrapper(\n    lambda *args, **kwargs: \"\",\n    exported,\n    inductor_configs={}\n)\n```\n\n```yaml\n- torch._export.export\n- torch.nn.Module\n- torch._inductor.compile_fx.compile_fx_inner\n",
-    "python_code": "\nimport torch\nimport torch._export\n\nclass MyModel(torch.nn.Module):\n    def forward(self, x):\n        return x * 2\n\nmodel = MyModel()\ninputs = (torch.randn(3),)\nexported = torch._export.export(model, inputs)\n\n# This could potentially fail if exported is corrupted\ntorch._inductor.debug.aot_inductor_minifier_wrapper(\n    lambda *args, **kwargs: \"\",\n    exported,\n    inductor_configs={}\n)\n```\n\n```yaml\n- torch._export.export\n- torch.nn.Module\n- torch._inductor.compile_fx.compile_fx_inner\n",
+    "summary": "\nThe aot_inductor_minifier_wrapper function is used for debugging and minifying PyTorch programs exported via torch.export. The vulnerable line directly accesses the module from an exported program without validation, which could lead to issues if:\n1. The input is not a valid exported program\n2. The module extraction fails\n3. The module is in an unexpected state\n4. The exported program is corrupted or malformed\n",
+    "python_code": "\nimport torch\nimport torch.export\n\ndef faulty_wrapper(exported_program):\n    # This demonstrates how the vulnerable line could be triggered\n    # without proper validation of the input\n    gm = exported_program.module()\n    return gm\n\n# Create a simple model\nmodel = torch.nn.Linear(10, 10)\nexample_input = torch.randn(10, 10)\nexported = torch.export.export(model, (example_input,))\n\n# Call the wrapper with exported program\nfaulty_wrapper(exported)\n",
     "api": [
-        "torch._export.export",
-        "torch.nn.Module",
-        "torch._inductor.compile_fx.compile_fx_inner"
+        "torch.export.export",
+        "torch.nn.Module"
     ]
 }

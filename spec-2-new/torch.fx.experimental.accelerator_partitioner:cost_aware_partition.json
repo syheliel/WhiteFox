@@ -1,11 +1,9 @@
 {
-    "summary": "\nThe cost_aware_partition function handles partitioning of PyTorch modules across devices based on computational cost. The vulnerable line calculates the latency cost of partitioned graphs, which is critical because:\n1. Precision issues in cost calculations could lead to suboptimal partitioning\n2. Incorrect latency estimates may result in inefficient device allocation\n3. The function is used to determine the most efficient partition configuration\n4. Floating-point precision errors could accumulate in large models\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass MultiDeviceModel(nn.Module):\n    def __init__(self):\n        super(MultiDeviceModel, self).__init__()\n        self.layer1 = nn.Linear(100, 200)\n        self.layer2 = nn.Linear(200, 100)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\n# This would trigger cost-aware partitioning when used with Partitioner\nmodel = MultiDeviceModel()\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.LSTM\n- nn.Embedding\n- nn.MultiheadAttention\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MultiDeviceModel(nn.Module):\n    def __init__(self):\n        super(MultiDeviceModel, self).__init__()\n        self.layer1 = nn.Linear(100, 200)\n        self.layer2 = nn.Linear(200, 100)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\n# This would trigger cost-aware partitioning when used with Partitioner\nmodel = MultiDeviceModel()\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.LSTM\n- nn.Embedding\n- nn.MultiheadAttention\n",
+    "summary": "\nThe cost_aware_partition function handles partitioning a PyTorch module across multiple devices based on computational cost. The vulnerable line calculates the latency cost of partitioned graphs, which is important because:\n1. Cost calculations affect partitioning decisions\n2. Precision issues could lead to suboptimal partitioning\n3. Incorrect cost estimates may degrade performance\n4. Missing validation for single-partition cases could bypass optimization\n\nThe search_combination function's vulnerable line checks for single partition cases but lacks validation, which could lead to:\n1. Skipping optimization opportunities\n2. Incorrect cost comparisons\n3. Potential edge cases not being handled\n4. Suboptimal device placement\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass MultiDeviceModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layer1 = nn.Linear(10, 10)\n        self.layer2 = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        x = self.layer1(x)\n        x = self.layer2(x)\n        return x\n\nmodel = MultiDeviceModel()\n# This would trigger cost-aware partitioning when compiled\n# with appropriate partitioning configuration\nscripted = torch.jit.script(model)\n",
     "api": [
-        "nn.Linear",
-        "nn.Conv2d",
-        "nn.LSTM",
-        "nn.Embedding",
-        "nn.MultiheadAttention"
+        "nn.Module",
+        "torch.jit.script",
+        "torch.nn.Linear"
     ]
 }

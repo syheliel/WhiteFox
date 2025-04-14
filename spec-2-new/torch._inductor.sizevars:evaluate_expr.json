@@ -1,12 +1,10 @@
 {
-    "summary": "\nThe evaluate_expr function evaluates symbolic expressions in PyTorch's shape environment. The vulnerable line directly converts a sympy expression to boolean, which can lose precision because:\n1. Sympy expressions may contain complex symbolic terms\n2. Direct boolean conversion doesn't properly handle all edge cases\n3. Precision loss could lead to incorrect shape calculations\n4. This affects tensor dimension computations and memory allocation\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ShapeEvaluator(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, kernel_size=3)\n        \n    def forward(self, x):\n        # This will trigger evaluate_expr internally during shape calculation\n        out = self.conv(x)\n        return out\n\n# This will trigger shape evaluation including evaluate_expr\nmodel = ShapeEvaluator()\nx = torch.randn(1, 3, 32, 32)\nout = model(x)\n```\n\n```yaml\n- nn.Conv2d\n- nn.Linear\n- nn.MaxPool2d\n- nn.AvgPool2d\n- nn.BatchNorm2d\n- nn.LayerNorm\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ShapeEvaluator(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, kernel_size=3)\n        \n    def forward(self, x):\n        # This will trigger evaluate_expr internally during shape calculation\n        out = self.conv(x)\n        return out\n\n# This will trigger shape evaluation including evaluate_expr\nmodel = ShapeEvaluator()\nx = torch.randn(1, 3, 32, 32)\nout = model(x)\n```\n\n```yaml\n- nn.Conv2d\n- nn.Linear\n- nn.MaxPool2d\n- nn.AvgPool2d\n- nn.BatchNorm2d\n- nn.LayerNorm\n",
+    "summary": "\nThe evaluate_expr function handles symbolic expression evaluation in PyTorch's shape environment. The vulnerable line directly converts a sympy expression to boolean, which can lead to precision loss because:\n1. Sympy expressions may contain complex symbolic terms\n2. Direct boolean conversion doesn't properly handle all edge cases\n3. Important mathematical properties may be lost in conversion\n4. This could lead to incorrect shape calculations or optimizations\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ShapeEvaluator(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This will trigger evaluate_expr internally during shape calculation\n        return x.reshape(x.size(0), -1)\n",
     "api": [
-        "nn.Conv2d",
-        "nn.Linear",
-        "nn.MaxPool2d",
-        "nn.AvgPool2d",
-        "nn.BatchNorm2d",
-        "nn.LayerNorm"
+        "nn.Module",
+        "nn.functional",
+        "torch.reshape",
+        "torch.Tensor.size"
     ]
 }

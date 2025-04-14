@@ -1,12 +1,10 @@
 {
-    "summary": "\nThe unsafe_allow_optimization_of_collectives flag controls whether collective operations (like all-reduce) can be optimized during compilation. When set to False (default), it prevents optimizations that could lead to deadlocks in distributed scenarios by:\n1. Preventing dead-code elimination of collectives\n2. Preventing recomputation of collectives during partitioning\n3. Ensuring consistent behavior across different ranks\n4. Maintaining the original execution order of collective operations\n```\n\n```python\nimport torch\nimport torch.distributed as dist\n\ndef collective_example():\n    dist.init_process_group('gloo')\n    tensor = torch.ones(1)\n    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)\n    return tensor\n```\n\n```yaml\n- torch.distributed.all_reduce\n- torch.distributed.broadcast\n- torch.distributed.reduce\n- torch.distributed.all_gather\n- torch.distributed.gather\n- torch.distributed.scatter\n",
-    "python_code": "\nimport torch\nimport torch.distributed as dist\n\ndef collective_example():\n    dist.init_process_group('gloo')\n    tensor = torch.ones(1)\n    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)\n    return tensor\n```\n\n```yaml\n- torch.distributed.all_reduce\n- torch.distributed.broadcast\n- torch.distributed.reduce\n- torch.distributed.all_gather\n- torch.distributed.gather\n- torch.distributed.scatter\n",
+    "summary": "\nThe `unsafe_allow_optimization_of_collectives` flag controls whether collective operations (like NCCL operations) can be optimized by the compiler. When set to False (default), it prevents compiler passes from reordering, deleting, or duplicating collective operations to avoid potential deadlocks in distributed scenarios where different ranks might make different optimization decisions. This is critical because:\n1. Collective operations must be executed consistently across all ranks\n2. Any divergence in optimization decisions between ranks can cause hangs\n3. The compiler cannot currently guarantee consistent optimization decisions across ranks\n4. Enabling this optimization could lead to subtle distributed deadlocks\n",
+    "python_code": "\nimport torch\nimport torch.distributed as dist\n\ndef collective_example():\n    dist.init_process_group(\"nccl\")\n    tensor = torch.ones(1).cuda()\n    dist.all_reduce(tensor)\n    return tensor\n",
     "api": [
         "torch.distributed.all_reduce",
         "torch.distributed.broadcast",
         "torch.distributed.reduce",
-        "torch.distributed.all_gather",
-        "torch.distributed.gather",
-        "torch.distributed.scatter"
+        "torch.distributed.all_gather"
     ]
 }

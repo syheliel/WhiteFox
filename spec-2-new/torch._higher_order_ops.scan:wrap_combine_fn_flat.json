@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe wrap_combine_fn_flat function is a helper function used in PyTorch's scan operation to flatten and validate input arguments before processing. The vulnerable line checks that the number of arguments matches the expected count (num_init_leaves + num_inp_leaves) but fails to validate argument types. This is important because:\n1. The scan operation expects tensor inputs\n2. Incorrect input types could lead to runtime errors or incorrect results\n3. The function assumes inputs match the expected structure\n4. Missing type validation could allow invalid inputs to propagate through the scan operation\n```\n\n```python\nimport torch\n\ndef combine_fn(carry, x):\n    next_carry = carry + x\n    output = carry * x\n    return next_carry, output\n\ninit = torch.tensor(1.0)\nxs = torch.tensor([2.0, 3.0, 4.0])\nresult = torch.scan(combine_fn, init, xs)\n```\n\n```yaml\n- torch.scan\n- torch.utils._pytree.tree_flatten\n- torch.utils._pytree.tree_unflatten\n",
-    "python_code": "\nimport torch\n\ndef combine_fn(carry, x):\n    next_carry = carry + x\n    output = carry * x\n    return next_carry, output\n\ninit = torch.tensor(1.0)\nxs = torch.tensor([2.0, 3.0, 4.0])\nresult = torch.scan(combine_fn, init, xs)\n```\n\n```yaml\n- torch.scan\n- torch.utils._pytree.tree_flatten\n- torch.utils._pytree.tree_unflatten\n",
+    "summary": "\nThe wrap_combine_fn_flat function is a helper function used in PyTorch's scan operation to validate and process inputs. The vulnerable line checks that the number of arguments matches the expected count (num_init_leaves + num_inp_leaves) but fails to validate argument types. This could lead to:\n1. Type mismatches going undetected\n2. Potential runtime errors when processing invalid types\n3. Incorrect behavior if non-tensor arguments are passed\n4. Silent failures when arguments don't match expected structure\n",
+    "python_code": "\nimport torch\n\ndef add_scan(carry, x):\n    next_carry = carry + x\n    return next_carry, x\n\ninit = torch.zeros(1)\nxs = torch.arange(5)\n# This will trigger the argument count check in wrap_combine_fn_flat\nlast_carry, cumsum = torch.scan(add_scan, init=init, xs=xs)\n",
     "api": [
         "torch.scan",
-        "torch.utils._pytree.tree_flatten",
-        "torch.utils._pytree.tree_unflatten"
+        "torch.nn.functional.scan",
+        "torch.fft.scan"
     ]
 }

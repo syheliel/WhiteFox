@@ -1,8 +1,9 @@
 {
-    "summary": "\nThe force_fallback function is a context manager that temporarily forces a PyTorch operation to use a fallback implementation. The vulnerable line registers a fallback handler for the given operation but fails to properly restore the original state if an exception occurs within the context. This could lead to:\n1. Incorrect operation behavior if exceptions occur\n2. Failure to restore original lowering implementation\n3. Potential memory leaks from unreleased resources\n4. Inconsistent state in the lowering registry\n```\n\n```python\nimport torch\nfrom torch._inductor import config\n\ndef test_function():\n    with config.patch(force_fallback=torch.ops.aten.add.Tensor):\n        # This will use fallback implementation\n        result = torch.add(torch.tensor(1), torch.tensor(2))\n        # If exception occurs here, original state won't be restored\n        raise RuntimeError(\"Test exception\")\n```\n\n```yaml\n- torch.ops.aten.add.Tensor\n- torch._inductor.config.patch\n",
-    "python_code": "\nimport torch\nfrom torch._inductor import config\n\ndef test_function():\n    with config.patch(force_fallback=torch.ops.aten.add.Tensor):\n        # This will use fallback implementation\n        result = torch.add(torch.tensor(1), torch.tensor(2))\n        # If exception occurs here, original state won't be restored\n        raise RuntimeError(\"Test exception\")\n```\n\n```yaml\n- torch.ops.aten.add.Tensor\n- torch._inductor.config.patch\n",
+    "summary": "\nThe force_fallback function is a context manager that temporarily forces a PyTorch operator to use a fallback implementation. The vulnerable line registers a fallback handler for the operator but fails to properly restore the original state if an exception occurs within the context. This could lead to:\n1. Incorrect operator behavior after exception\n2. Memory leaks from unreleased resources\n3. Inconsistent state in the lowering registry\n4. Potential security issues if fallback state persists\n",
+    "python_code": "\nimport torch\nfrom torch._inductor import config\n\n# Example showing the vulnerability\nop = torch.ops.aten.add\ntry:\n    with config.patch(force_fallback=op):\n        # This will raise an exception\n        1/0\nexcept ZeroDivisionError:\n    pass\n\n# Original handler not properly restored if exception occurred\n",
     "api": [
-        "torch.ops.aten.add.Tensor",
-        "torch._inductor.config.patch"
+        "torch.ops.aten.add",
+        "torch.ops.aten.sub",
+        "torch.ops.aten.mul"
     ]
 }

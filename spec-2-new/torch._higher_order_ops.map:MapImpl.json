@@ -1,12 +1,14 @@
 {
-    "summary": "\nThe map_wrapper function handles mapping operations over tensors in PyTorch, particularly dealing with quantized tensors. The vulnerable line performs type inference for the output of map_impl using out_spec, which may not properly handle quantized tensor types. This is important because:\n1. Quantized tensors have special type information and metadata\n2. Incorrect type inference could lead to loss of quantization information\n3. The output specification (out_spec) might not preserve quantization parameters\n4. This could cause silent errors in quantized models\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass QuantizedMapModel(nn.Module):\n    def __init__(self):\n        super(QuantizedMapModel, self).__init__()\n        self.quant = torch.quantization.QuantStub()\n        self.dequant = torch.quantization.DeQuantStub()\n        \n    def forward(self, x):\n        x = self.quant(x)\n        def map_fn(x):\n            return x * 2\n        mapped = torch._higher_order_ops.map(map_fn, x)\n        return self.dequant(mapped)\n\nmodel = QuantizedMapModel()\nmodel.qconfig = torch.quantization.get_default_qconfig('fbgemm')\nmodel = torch.quantization.prepare(model)\nmodel = torch.quantization.convert(model)\ninput = torch.randn(4, 3)\noutput = model(input)\n```\n\n```yaml\n- torch.quantization.QuantStub\n- torch.quantization.DeQuantStub\n- torch.quantization.get_default_qconfig\n- torch.quantization.prepare\n- torch.quantization.convert\n- torch._higher_order_ops.map\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass QuantizedMapModel(nn.Module):\n    def __init__(self):\n        super(QuantizedMapModel, self).__init__()\n        self.quant = torch.quantization.QuantStub()\n        self.dequant = torch.quantization.DeQuantStub()\n        \n    def forward(self, x):\n        x = self.quant(x)\n        def map_fn(x):\n            return x * 2\n        mapped = torch._higher_order_ops.map(map_fn, x)\n        return self.dequant(mapped)\n\nmodel = QuantizedMapModel()\nmodel.qconfig = torch.quantization.get_default_qconfig('fbgemm')\nmodel = torch.quantization.prepare(model)\nmodel = torch.quantization.convert(model)\ninput = torch.randn(4, 3)\noutput = model(input)\n```\n\n```yaml\n- torch.quantization.QuantStub\n- torch.quantization.DeQuantStub\n- torch.quantization.get_default_qconfig\n- torch.quantization.prepare\n- torch.quantization.convert\n- torch._higher_order_ops.map\n",
+    "summary": "\nThe map_wrapper function handles mapping operations over tensors in PyTorch. The vulnerable line performs type inference for the output of map_impl using out_spec, which may not properly handle quantized tensors. This is important because:\n1. Quantized tensors have different type properties than regular tensors\n2. Incorrect type inference could lead to quantization information loss\n3. The output specification (out_spec) may not account for quantization parameters\n4. This could cause issues in quantization-aware training scenarios\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\ndef simple_map_func(x):\n    return x * 2\n\nx = torch.randn(3, 4)\nquantized_x = torch.quantize_per_tensor(x, scale=0.1, zero_point=0, dtype=torch.quint8)\n\n# This may trigger the vulnerable line when processing quantized tensors\nresult = torch._higher_order_ops.map(simple_map_func, quantized_x)\n",
     "api": [
-        "torch.quantization.QuantStub",
-        "torch.quantization.DeQuantStub",
-        "torch.quantization.get_default_qconfig",
-        "torch.quantization.prepare",
-        "torch.quantization.convert",
-        "torch._higher_order_ops.map"
+        "nn.quantized.Linear",
+        "nn.quantized.Conv2d",
+        "nn.quantized.Conv3d",
+        "nn.quantized.MaxPool2d",
+        "nn.quantized.MaxPool3d",
+        "nn.quantized.adaptive_avg_pool2d",
+        "nn.quantized.adaptive_avg_pool3d",
+        "nn.quantized.functional.interpolate"
     ]
 }

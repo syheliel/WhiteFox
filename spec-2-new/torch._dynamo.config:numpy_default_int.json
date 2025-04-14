@@ -1,8 +1,8 @@
 {
-    "summary": "\nThe numpy_default_int configuration setting determines the default integer dtype used when tracing NumPy operations with torch.compile(). The vulnerable line sets this default to \"int64\", which may cause:\n1. Unnecessary memory usage for operations that don't require 64-bit integers\n2. Inefficient computation when smaller integer types would suffice\n3. Potential compatibility issues with code expecting smaller integer types\n4. Suboptimal performance in memory-bound operations\n```\n\n```python\nimport torch\nimport numpy as np\n\ndef numpy_operation(x):\n    # This will use the default int64 dtype from config\n    arr = np.array([1, 2, 3])\n    return torch.from_numpy(arr) + x\n\ncompiled_fn = torch.compile(numpy_operation)\nresult = compiled_fn(torch.tensor([1]))\n```\n\n```yaml\n- torch.compile\n- torch.from_numpy\n",
-    "python_code": "\nimport torch\nimport numpy as np\n\ndef numpy_operation(x):\n    # This will use the default int64 dtype from config\n    arr = np.array([1, 2, 3])\n    return torch.from_numpy(arr) + x\n\ncompiled_fn = torch.compile(numpy_operation)\nresult = compiled_fn(torch.tensor([1]))\n```\n\n```yaml\n- torch.compile\n- torch.from_numpy\n",
+    "summary": "\nThe numpy_default_int configuration sets the default integer type used when tracing NumPy operations in PyTorch. The vulnerable line defaults to \"int64\" which may cause:\n1. Unnecessary memory usage for operations that don't require 64-bit integers\n2. Performance overhead from larger data types\n3. Inefficient computation when smaller integer types would suffice\n4. Potential compatibility issues with code expecting smaller integer types\n",
+    "python_code": "\nimport torch\nimport numpy as np\n\ndef numpy_operations(x):\n    # This will use the default numpy int type (int64)\n    arr = np.array([1, 2, 3])\n    return x + torch.from_numpy(arr)\n\ncompiled_fn = torch.compile(numpy_operations)\nresult = compiled_fn(torch.tensor([10, 20, 30]))\n",
     "api": [
-        "torch.compile",
-        "torch.from_numpy"
+        "torch.from_numpy",
+        "torch.compile"
     ]
 }

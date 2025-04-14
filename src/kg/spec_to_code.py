@@ -1,16 +1,27 @@
-from src.conf import TORCH_BASE
 from src.llm_client import get_openai, ALL_MODEL
 from pathlib import Path
 import click
 import json
-from typing import TypedDict
+from typing import TypedDict, Callable
 from loguru import logger
+from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType
+from src.db.factory import BaseEmbedding, BaseVectorDB
 import tqdm
+from typing import List
 class SpecData(TypedDict):
     summary: str
     python_code: str
+    api: List[str]
 
-extract_python_code = lambda text: text.split("```python")[1].split("```")[0]
+def get_api_docs(apis:List[str],embedding:BaseEmbedding, vector_db:BaseVectorDB) -> List[str]:
+    results:List[str] = []
+    for api in apis:
+        prompt = f"""documentation for {api} defined by sphinx. using __DOC__ to refer to the documentation.
+        """
+        query_embedding = embedding.embed_query(prompt)
+        results.extend(vector_db.query_by_emb(query_embedding, n_results=2).documents) # type: ignore
+    return results
+extract_python_code: Callable[[str], str] = lambda text: text.split("```python")[1].split("```")[0]
 SYSTEM_PROMPT = """You are a pytorch source code test generator. I will give you a summary of your test goal and a python code. Please generate a runnable python code that:
 1. nn.Module class:your code should have one classinherits from nn.Module.
 2. prepare input: prepare input tensor and output tensor for the forward function.
@@ -69,13 +80,17 @@ def main(input_dir: str, output_dir: str, model: str, gen_num: int, temperature:
             spec: SpecData = json.load(f)
         summary = spec["summary"]
         python_code = spec["python_code"]
+        api:List[str] = spec["api"]
+        embedding = EmbeddingFactory.create_embedding(EmbeddingType.HUGGINGFACE)
+        vector_db = VectorDBFactory.create_source_vector_db(vector_db_type=VectorDBType.CHROMA)
+        api_docs:List[str] = get_api_docs(api, embedding, vector_db)
         USER_PROMPT = f"""
         Here is the summary of your test goal:
         {summary}
         Here is the python code:
         {python_code}
         Here is the api documentation:
-        
+        {"\n".join([f"```doc\n{api_doc}\n```" for api_doc in api_docs])}
         """
         prompt = client.chat.completions.create(
             model=model,
@@ -88,10 +103,10 @@ def main(input_dir: str, output_dir: str, model: str, gen_num: int, temperature:
         )
         logger.info(f"Generated {len(prompt.choices)} tests for {spec_p}")
         for idx, choice in enumerate(prompt.choices):
-            out_name = f"{spec_p.stem}-{idx}.py"
-            code = extract_python_code(choice.message.content) # type: ignore
+            out_name:str = f"{spec_p.stem}-{idx}.py"
+            code:str = extract_python_code(choice.message.content) # type: ignore
             with open(func_dir / out_name, "w") as f:
-                f.write(code)
+                f.write(code) # type: ignore
     
 if __name__ == "__main__":
     main()

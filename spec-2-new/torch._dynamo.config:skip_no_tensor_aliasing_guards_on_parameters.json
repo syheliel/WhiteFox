@@ -1,8 +1,8 @@
 {
-    "summary": "\nThe skip_no_tensor_aliasing_guards_on_parameters configuration controls whether PyTorch Dynamo will skip checking for tensor aliasing on parameters. When set to True:\n1. It disables safety checks that prevent the same parameter from being used as multiple inputs\n2. This can lead to incorrect computation results if parameters are aliased\n3. The optimization is unsafe but may improve performance by reducing guard checks\n4. This is particularly risky when the same parameter is passed to multiple operations\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.param = nn.Parameter(torch.randn(3,3))\n        \n    def forward(self, x):\n        # Using same parameter twice without aliasing guard\n        return x @ self.param + self.param\n```\n\n```yaml\n- nn.Parameter\n- nn.Module\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.param = nn.Parameter(torch.randn(3,3))\n        \n    def forward(self, x):\n        # Using same parameter twice without aliasing guard\n        return x @ self.param + self.param\n```\n\n```yaml\n- nn.Parameter\n- nn.Module\n",
+    "summary": "\nThe skip_no_tensor_aliasing_guards_on_parameters configuration controls whether PyTorch Dynamo will skip checking for tensor aliasing on parameters. When enabled (True), this can lead to incorrect results if:\n1. The same parameter is passed as multiple inputs to a function\n2. The parameter is modified in-place during execution\n3. The compiler assumes parameters are independent when they're actually aliased\nThis optimization trades correctness for performance by skipping important safety checks.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3))\n\n    def forward(self, x):\n        # Passing same parameter as multiple inputs\n        return x @ self.weight + self.weight\n",
     "api": [
         "nn.Parameter",
-        "nn.Module"
+        "torch.Tensor"
     ]
 }

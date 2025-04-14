@@ -1,9 +1,9 @@
 {
-    "summary": "\nThe _validate_pass_schedule_constraint function validates pass scheduling constraints in PyTorch's PassManager. The vulnerable line checks if passes in a list satisfy given constraints but lacks input validation for:\n1. The constraint function's signature (should take two Callables and return bool)\n2. The passes list contents (should contain valid callable passes)\n3. The constraint function's behavior (should properly implement dependency logic)\nMissing validation could lead to runtime errors when invalid constraints or passes are provided.\n```\n\n```python\nimport torch\nfrom torch.fx import PassManager\n\ndef my_pass1(gm):\n    return gm\n\ndef my_pass2(gm):\n    return gm\n\n# Invalid constraint function (wrong signature)\ndef bad_constraint(a):\n    return True\n\npm = PassManager(passes=[my_pass1, my_pass2], constraints=[bad_constraint])\n# This will fail when validate() is called due to missing input validation\npm.validate()\n```\n\n```yaml\n- torch.fx.PassManager\n- torch.fx.symbolic_trace\n- torch.fx.GraphModule\n",
-    "python_code": "\nimport torch\nfrom torch.fx import PassManager\n\ndef my_pass1(gm):\n    return gm\n\ndef my_pass2(gm):\n    return gm\n\n# Invalid constraint function (wrong signature)\ndef bad_constraint(a):\n    return True\n\npm = PassManager(passes=[my_pass1, my_pass2], constraints=[bad_constraint])\n# This will fail when validate() is called due to missing input validation\npm.validate()\n```\n\n```yaml\n- torch.fx.PassManager\n- torch.fx.symbolic_trace\n- torch.fx.GraphModule\n",
+    "summary": "\nThe `_validate_pass_schedule_constraint` function validates pass scheduling constraints in PyTorch's PassManager. The vulnerable line checks if passes in a list satisfy given constraints, but lacks proper validation of:\n1. The constraint function's signature (should take two callables and return bool)\n2. The passes list contents (should contain valid callable passes)\n3. Edge cases where constraints might be malformed\nThis could lead to runtime errors if invalid constraints or passes are provided.\n",
+    "python_code": "\nimport torch\n\ndef my_pass(x):\n    return x\n\ndef invalid_constraint(a, b, c):  # Wrong signature\n    return True\n\npm = torch.fx._passes.infra.pass_manager.PassManager(\n    passes=[my_pass],\n    constraints=[invalid_constraint]  # This should fail validation\n)\n\n# This would raise a runtime error due to invalid constraint signature\npm.validate()\n",
     "api": [
-        "torch.fx.PassManager",
-        "torch.fx.symbolic_trace",
-        "torch.fx.GraphModule"
+        "torch.fx.passes.infra.pass_manager.PassManager",
+        "torch.fx._passes.infra.pass_manager.this_before_that_pass_constraint",
+        "torch.fx._passes.infra.pass_manager.these_before_those_pass_constraint"
     ]
 }

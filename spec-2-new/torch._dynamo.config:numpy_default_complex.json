@@ -1,10 +1,12 @@
 {
-    "summary": "\nThe numpy_default_complex configuration parameter sets the default NumPy complex dtype to be used when tracing with torch.compile. The vulnerable line sets this default to \"complex128\", which:\n1. Uses 128 bits (16 bytes) per complex number\n2. May cause excessive memory usage when lower precision would suffice\n3. Could impact performance due to higher memory bandwidth requirements\n4. May not be necessary for many machine learning applications where \"complex64\" (8 bytes) would be sufficient\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ComplexModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10, 10, dtype=torch.complex64))\n        \n    def forward(self, x):\n        # This will use numpy_default_complex=\"complex128\" when traced\n        x = x.to(torch.complex64) @ self.weight\n        return x.abs()\n\nmodel = ComplexModel()\noptimized_model = torch.compile(model)\n```\n\n```yaml\n- torch.compile\n- torch.complex64\n- torch.complex128\n- nn.Parameter\n",
-    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ComplexModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10, 10, dtype=torch.complex64))\n        \n    def forward(self, x):\n        # This will use numpy_default_complex=\"complex128\" when traced\n        x = x.to(torch.complex64) @ self.weight\n        return x.abs()\n\nmodel = ComplexModel()\noptimized_model = torch.compile(model)\n```\n\n```yaml\n- torch.compile\n- torch.complex64\n- torch.complex128\n- nn.Parameter\n",
+    "summary": "\nThe numpy_default_complex configuration sets the default complex number precision used when tracing NumPy operations with torch.compile(). Using \"complex128\" as the default may cause:\n1. Higher memory usage than necessary for many applications\n2. Potential performance overhead from unnecessary high precision\n3. Inefficient computation when lower precision (complex64) would suffice\n4. No benefit for cases that don't require double precision complex numbers\n",
+    "python_code": "\nimport torch\nimport numpy as np\n\ndef complex_operations(x):\n    # This will use the default complex128 precision from config\n    a = np.fft.fft(x.numpy())\n    b = np.angle(a)\n    return torch.from_numpy(b)\n\ncompiled_fn = torch.compile(complex_operations)\nx = torch.randn(1024)\nresult = compiled_fn(x)\n",
     "api": [
-        "torch.compile",
-        "torch.complex64",
-        "torch.complex128",
-        "nn.Parameter"
+        "torch.fft.fft",
+        "torch.fft.ifft",
+        "torch.fft.rfft",
+        "torch.fft.irfft",
+        "torch.fft.hfft",
+        "torch.fft.ihfft"
     ]
 }

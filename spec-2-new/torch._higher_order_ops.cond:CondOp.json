@@ -1,11 +1,9 @@
 {
-    "summary": "\nThe cond_batch_rule function handles batched conditional operations in PyTorch. The vulnerable line uses torch.where for conditional selection which may have precision issues with floating-point numbers. This is important because:\n1. torch.where performs element-wise conditional selection\n2. Floating-point precision can be affected during the selection\n3. The operation is used in batched conditional execution\n4. Precision loss could accumulate across batches\n```\n\n```python\nimport torch\n\ndef true_fn(x):\n    return x * 2.0\n\ndef false_fn(x):\n    return x / 2.0\n\nx = torch.randn(4, requires_grad=True)\npred = torch.tensor([True, False, True, False])\nresult = torch.cond(pred, true_fn, false_fn, (x,))\n```\n\n```yaml\n- torch.where\n- torch.cond\n- torch.vmap\n- torch.Tensor\n- torch.randn\n",
-    "python_code": "\nimport torch\n\ndef true_fn(x):\n    return x * 2.0\n\ndef false_fn(x):\n    return x / 2.0\n\nx = torch.randn(4, requires_grad=True)\npred = torch.tensor([True, False, True, False])\nresult = torch.cond(pred, true_fn, false_fn, (x,))\n```\n\n```yaml\n- torch.where\n- torch.cond\n- torch.vmap\n- torch.Tensor\n- torch.randn\n",
+    "summary": "\nThe cond_batch_rule function handles batched conditional operations in PyTorch's vmap transform. The vulnerable line uses torch.where for conditional selection between true and false branch outputs. This is important because:\n1. torch.where may have precision issues with floating-point comparisons\n2. The operation assumes consistent tensor shapes between branches\n3. The selection happens after evaluating both branches\n4. No explicit type checking is performed on the branch outputs\n",
+    "python_code": "\nimport torch\nfrom torch import vmap\n\ndef true_fn(x):\n    return x * 2\n\ndef false_fn(x):\n    return x / 2\n\nx = torch.tensor([1.0, 2.0, 3.0])\npred = torch.tensor([True, False, True])\n\nresult = vmap(lambda p, x: torch.where(p, true_fn(x), false_fn(x)))(pred, x)\n",
     "api": [
         "torch.where",
-        "torch.cond",
         "torch.vmap",
-        "torch.Tensor",
-        "torch.randn"
+        "torch.Tensor"
     ]
 }

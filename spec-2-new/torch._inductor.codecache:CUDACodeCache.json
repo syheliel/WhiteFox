@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe compile function in CUDACodeCache handles compilation of CUDA source code into binary files. The vulnerable line executes the compilation command via subprocess.check_output() but may not properly handle all possible subprocess failures. Key issues:\n1. The error handling only catches CalledProcessError but other exceptions could occur\n2. The error message may not be properly formatted/displayed in all cases\n3. No timeout is specified for the compilation process\n4. Resource limits are not set for the subprocess\n```\n\n```python\nimport torch\nfrom torch._inductor.codecache import CUDACodeCache\n\n# Example triggering the vulnerable line\nsource_code = \"\"\"\n__global__ void kernel(float* output) {\n    int idx = blockIdx.x * blockDim.x + threadIdx.x;\n    output[idx] = idx;\n}\n\"\"\"\n\ntry:\n    # This will trigger subprocess.check_output() call\n    CUDACodeCache.compile(source_code, \"so\")\nexcept Exception as e:\n    print(f\"Compilation failed: {e}\")\n```\n\n```yaml\n- subprocess.check_output\n- subprocess.CalledProcessError\n- os.environ\n- subprocess.STDOUT\n",
-    "python_code": "\nimport torch\nfrom torch._inductor.codecache import CUDACodeCache\n\n# Example triggering the vulnerable line\nsource_code = \"\"\"\n__global__ void kernel(float* output) {\n    int idx = blockIdx.x * blockDim.x + threadIdx.x;\n    output[idx] = idx;\n}\n\"\"\"\n\ntry:\n    # This will trigger subprocess.check_output() call\n    CUDACodeCache.compile(source_code, \"so\")\nexcept Exception as e:\n    print(f\"Compilation failed: {e}\")\n```\n\n```yaml\n- subprocess.check_output\n- subprocess.CalledProcessError\n- os.environ\n- subprocess.STDOUT\n",
+    "summary": "\nThe `compile` function in `CUDACodeCache` handles compiling CUDA source code into object files or shared libraries. The vulnerable line executes the compilation command via subprocess without proper error handling for cases where:\n1. The compilation command fails\n2. The subprocess execution fails\n3. The output path is invalid\nThis could lead to uncaught exceptions or incomplete error messages being propagated.\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass CudaCompileTest(nn.Module):\n    def __init__(self):\n        super().__init__()\n        \n    def forward(self, x):\n        # This would trigger CUDA compilation\n        return x * 2\n\nmodel = CudaCompileTest().cuda()\nx = torch.randn(10, device='cuda')\nout = model(x)  # This may trigger the vulnerable compilation path\n",
     "api": [
-        "subprocess.check_output",
-        "subprocess.CalledProcessError",
-        "os.environ",
-        "subprocess.STDOUT"
+        "torch.nn.Module",
+        "torch.cuda",
+        "torch.Tensor"
     ]
 }

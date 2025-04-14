@@ -1,10 +1,9 @@
 {
-    "summary": "\nThe index_reduce function performs reduction operations (like mean, sum, etc.) along a specified dimension using index-based grouping. The vulnerable line checks for mean reduction and atomic add limitations, which is important because:\n1. Mean reduction requires accurate accumulation for correct results\n2. Certain dtypes may not support atomic operations properly\n3. Precision loss can occur if atomic adds are not handled carefully\n4. The function needs to fall back to alternative implementations when atomic ops are unsafe\n```\n\n```python\nimport torch\n\nx = torch.randn(3, 3)\nindex = torch.tensor([0, 1, 0])\nsrc = torch.randn(3, 3)\n\n# Example triggering mean reduction\nresult = torch.index_reduce(x, dim=0, index=index, source=src, reduce='mean')\n```\n\n```yaml\n- torch.index_reduce\n- torch.Tensor.index_reduce_\n- torch.scatter_reduce\n- torch.Tensor.scatter_reduce_\n",
-    "python_code": "\nimport torch\n\nx = torch.randn(3, 3)\nindex = torch.tensor([0, 1, 0])\nsrc = torch.randn(3, 3)\n\n# Example triggering mean reduction\nresult = torch.index_reduce(x, dim=0, index=index, source=src, reduce='mean')\n```\n\n```yaml\n- torch.index_reduce\n- torch.Tensor.index_reduce_\n- torch.scatter_reduce\n- torch.Tensor.scatter_reduce_\n",
+    "summary": "\nThe index_reduce function performs reduction operations (like mean, sum, etc.) along a specified dimension using indices from another tensor. The vulnerable line checks if the reduction type is \"mean\" and whether the dtype supports atomic operations. This is important because:\n1. Mean reduction requires precise accumulation to maintain accuracy\n2. Some dtypes may not support atomic operations needed for correct mean calculation\n3. Incorrect handling could lead to precision loss or incorrect results\n4. The function needs to fallback to alternative implementations for unsupported dtypes\n",
+    "python_code": "\nimport torch\n\nx = torch.randn(3, 3)\nindex = torch.tensor([0, 1, 0])\nsrc = torch.randn(3, 3)\n\n# Trigger mean reduction with index_reduce\nresult = torch.index_reduce(x, dim=0, index=index, source=src, reduce='mean', include_self=True)\n",
     "api": [
         "torch.index_reduce",
-        "torch.Tensor.index_reduce_",
         "torch.scatter_reduce",
-        "torch.Tensor.scatter_reduce_"
+        "torch.Tensor.index_add_"
     ]
 }
