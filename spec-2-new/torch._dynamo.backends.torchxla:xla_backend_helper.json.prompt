@@ -69,5 +69,5 @@ register_backend(name="openxla", compiler_fn=openxla)
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

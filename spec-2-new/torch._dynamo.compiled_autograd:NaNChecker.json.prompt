@@ -1442,5 +1442,5 @@ def copy_slices_epilogue(needs_input_grad, result, res, grad_slice):
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

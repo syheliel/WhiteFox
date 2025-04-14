@@ -1,4 +1,9 @@
 {
-    "summary": "\nThe create_load_const function creates a LOAD_CONST instruction in Python bytecode. The vulnerable line checks if a value is a \"safe constant\" before creating the instruction. This is important because:\n1. Loading unsafe constants could lead to security vulnerabilities\n2. The check prevents loading of potentially dangerous objects\n3. The assertion error message reveals the unsafe value\n4. Missing or incomplete validation could allow unsafe constants\n```\n\n```python\nclass UnsafeConstantModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.value = lambda: print(\"This could be dangerous!\")\n\n    def forward(self, x):\n        # This would trigger the unsafe constant check\n        const = self.value\n        return x * 2\n",
-    "python_code": "\nclass UnsafeConstantModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.value = lambda: print(\"This could be dangerous!\")\n\n    def forward(self, x):\n        # This would trigger the unsafe constant check\n        const = self.value\n        return x * 2\n"
+    "summary": "\nThe create_load_const function creates a LOAD_CONST instruction in Python bytecode. The vulnerable line checks if a constant value is safe to load using is_safe_constant(). This is important because:\n1. Loading unsafe constants could lead to security vulnerabilities\n2. The check may not cover all potentially dangerous constant types\n3. Bypassing this check could allow injection of malicious objects\n4. The assertion failure message leaks the unsafe constant value\n```\n\n```python\nimport torch\n\ndef load_unsafe_constant():\n    unsafe_val = [1, 2, 3]  # Mutable list is considered unsafe\n    return torch.jit.script(load_unsafe_constant.__code__)\n```\n\n```yaml\n- torch.jit.script\n- torch.compile\n- torch._dynamo.optimize\n",
+    "python_code": "\nimport torch\n\ndef load_unsafe_constant():\n    unsafe_val = [1, 2, 3]  # Mutable list is considered unsafe\n    return torch.jit.script(load_unsafe_constant.__code__)\n```\n\n```yaml\n- torch.jit.script\n- torch.compile\n- torch._dynamo.optimize\n",
+    "api": [
+        "torch.jit.script",
+        "torch.compile",
+        "torch._dynamo.optimize"
+    ]
 }

@@ -929,6 +929,7 @@ def _compile(
             output,
             cache_entry,
             hooks.guard_fail_fn if hooks else None,
+            hooks.guard_filter_fn if hooks else None,
         )
 
         compile_id_str = str(compile_id) if compile_id is not None else "Unknown"
@@ -1482,5 +1483,5 @@ def catch_errors_wrapper(
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

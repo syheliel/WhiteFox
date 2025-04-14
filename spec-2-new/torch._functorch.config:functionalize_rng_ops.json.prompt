@@ -290,5 +290,5 @@ install_config_module(sys.modules[__name__])
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

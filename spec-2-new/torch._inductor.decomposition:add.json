@@ -1,4 +1,12 @@
 {
-    "summary": "\nThe `add` function handles element-wise addition of two tensors with special handling for complex tensors. The vulnerable line checks that both input tensors are complex tensors before proceeding with the operation. This strict requirement may be problematic because:\n1. It prevents mixed-type operations between complex and real tensors\n2. It may unnecessarily restrict valid use cases\n3. The error handling could be more graceful\n4. The function could potentially handle real tensors as a special case of complex tensors\n```\n\n```python\nclass ComplexModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3, dtype=torch.complex64))\n        \n    def forward(self, x):\n        # This will trigger the type check since x is real but weight is complex\n        out = x + self.weight\n        return out\n",
-    "python_code": "\nclass ComplexModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(3, 3, dtype=torch.complex64))\n        \n    def forward(self, x):\n        # This will trigger the type check since x is real but weight is complex\n        out = x + self.weight\n        return out\n"
+    "summary": "\nThe `add` function in PyTorch's decomposition module handles complex tensor addition with strict type checking. The vulnerable line enforces that both input tensors must be complex, which may be overly restrictive for some use cases. This strict requirement:\n1. Forces both inputs to be complex tensors\n2. Rejects valid operations where one input could be real\n3. May unnecessarily limit mixed-type operations\n4. Could be relaxed while maintaining mathematical correctness\n```\n\n```python\nimport torch\n\n# Example that would trigger the strict complex check\nx = torch.randn(3, 3, dtype=torch.complex64)\ny = torch.randn(3, 3)  # Real tensor\ntry:\n    z = x + y  # Would fail the complex tensor check\nexcept Exception as e:\n    print(f\"Error: {e}\")\n```\n\n```yaml\n- torch.add\n- torch.Tensor.add_\n- torch.Tensor.__add__\n- torch.Tensor.__radd__\n- torch.complex\n- torch.view_as_complex\n",
+    "python_code": "\nimport torch\n\n# Example that would trigger the strict complex check\nx = torch.randn(3, 3, dtype=torch.complex64)\ny = torch.randn(3, 3)  # Real tensor\ntry:\n    z = x + y  # Would fail the complex tensor check\nexcept Exception as e:\n    print(f\"Error: {e}\")\n```\n\n```yaml\n- torch.add\n- torch.Tensor.add_\n- torch.Tensor.__add__\n- torch.Tensor.__radd__\n- torch.complex\n- torch.view_as_complex\n",
+    "api": [
+        "torch.add",
+        "torch.Tensor.add_",
+        "torch.Tensor.__add__",
+        "torch.Tensor.__radd__",
+        "torch.complex",
+        "torch.view_as_complex"
+    ]
 }

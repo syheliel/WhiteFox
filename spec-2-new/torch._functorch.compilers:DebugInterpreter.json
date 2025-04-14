@@ -1,4 +1,18 @@
 {
-    "summary": "\nThe DebugInterpreter.run_node function performs debugging checks during FX graph interpretation. The vulnerable lines handle:\n1. Strict dtype checking between expected (nv) and actual (rv) tensors\n2. Skipping non-tensor values during validation\nKey issues:\n1. The dtype check is too strict and may fail for numerically equivalent types\n2. Quantized tensor types are not properly handled in the type checking\n3. The interpreter assumes all tensors should be checked for dtype consistency\n```\n\n```python\nclass DebugModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, kernel_size=3)\n        \n    def forward(self, x):\n        x = self.conv(x)\n        x = x.to(torch.float16)  # Trigger dtype change\n        x = torch.relu(x)\n        x = x * 0.5  # Non-tensor operation that will be skipped\n        return x\n",
-    "python_code": "\nclass DebugModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.conv = nn.Conv2d(3, 16, kernel_size=3)\n        \n    def forward(self, x):\n        x = self.conv(x)\n        x = x.to(torch.float16)  # Trigger dtype change\n        x = torch.relu(x)\n        x = x * 0.5  # Non-tensor operation that will be skipped\n        return x\n"
+    "summary": "\nThe DebugInterpreter.run_node function performs debugging checks on FX graph nodes during execution. The vulnerable lines handle:\n1. Strict dtype checking that may fail for numerically equivalent types (e.g. float32 vs bfloat16)\n2. Missing handling of quantized tensor types during type checking\n3. Validation of tensor properties (dtype, size, strides) between expected and actual values\n4. Debugging support for symbolic shape execution\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass DebugModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        # This will trigger dtype check when run through DebugInterpreter\n        x = self.linear(x.float())\n        return x.half()\n\nmodel = DebugModel()\ninterpreter = DebugInterpreter(torch.fx.symbolic_trace(model))\ninput = torch.randn(1, 10)\ninterpreter.run(input)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.BatchNorm2d\n- nn.LSTM\n- nn.Embedding\n- nn.Transformer\n- nn.MultiheadAttention\n- functional.linear\n- functional.conv2d\n- functional.batch_norm\n- functional.embedding\n- functional.multi_head_attention_forward\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass DebugModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        # This will trigger dtype check when run through DebugInterpreter\n        x = self.linear(x.float())\n        return x.half()\n\nmodel = DebugModel()\ninterpreter = DebugInterpreter(torch.fx.symbolic_trace(model))\ninput = torch.randn(1, 10)\ninterpreter.run(input)\n```\n\n```yaml\n- nn.Linear\n- nn.Conv2d\n- nn.BatchNorm2d\n- nn.LSTM\n- nn.Embedding\n- nn.Transformer\n- nn.MultiheadAttention\n- functional.linear\n- functional.conv2d\n- functional.batch_norm\n- functional.embedding\n- functional.multi_head_attention_forward\n",
+    "api": [
+        "nn.Linear",
+        "nn.Conv2d",
+        "nn.BatchNorm2d",
+        "nn.LSTM",
+        "nn.Embedding",
+        "nn.Transformer",
+        "nn.MultiheadAttention",
+        "functional.linear",
+        "functional.conv2d",
+        "functional.batch_norm",
+        "functional.embedding",
+        "functional.multi_head_attention_forward"
+    ]
 }

@@ -1,4 +1,12 @@
 {
-    "summary": "\nThe ConstructorMoverPass class handles moving tensor constructors from CPU to GPU devices in PyTorch graphs. The vulnerable line updates the device parameter in kwargs to the target GPU device. This is important because:\n1. It modifies tensor creation locations which affects memory placement\n2. Incorrect device assignment could lead to runtime errors\n3. The transformation assumes all downstream operations can handle GPU tensors\n4. Missing validation could move tensors that shouldn't be moved\n```\n\n```python\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10, 10))\n        \n    def forward(self, x):\n        # Creates CPU tensor that could be moved to GPU\n        bias = torch.zeros(10)  \n        return x @ self.weight + bias\n",
-    "python_code": "\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.weight = nn.Parameter(torch.randn(10, 10))\n        \n    def forward(self, x):\n        # Creates CPU tensor that could be moved to GPU\n        bias = torch.zeros(10)  \n        return x @ self.weight + bias\n"
+    "summary": "\nThe ConstructorMoverPass class handles moving tensor constructors from CPU to a target device (like GPU) in PyTorch graphs. The vulnerable line updates the device parameter in constructor kwargs to the target device. This is important because:\n1. It modifies tensor creation locations in the computation graph\n2. Incorrect device movement could lead to performance issues or errors\n3. The pass must carefully validate which constructors can be safely moved\n4. Missing validation could move incompatible operations to wrong devices\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # CPU tensor constructor that could be moved\n        ones = torch.ones(10, device='cpu')\n        return self.linear(x) + ones\n```\n\n```yaml\n- nn.Linear\n- torch.ones\n- torch.zeros\n- torch.empty\n- torch.rand\n- torch.randn\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass ModelWithConstructors(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # CPU tensor constructor that could be moved\n        ones = torch.ones(10, device='cpu')\n        return self.linear(x) + ones\n```\n\n```yaml\n- nn.Linear\n- torch.ones\n- torch.zeros\n- torch.empty\n- torch.rand\n- torch.randn\n",
+    "api": [
+        "nn.Linear",
+        "torch.ones",
+        "torch.zeros",
+        "torch.empty",
+        "torch.rand",
+        "torch.randn"
+    ]
 }

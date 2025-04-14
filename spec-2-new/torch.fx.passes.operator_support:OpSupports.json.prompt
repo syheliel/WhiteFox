@@ -245,5 +245,5 @@ def _get_arg_dtype(arg: torch.fx.Node) -> t.Any:
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

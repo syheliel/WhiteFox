@@ -1007,7 +1007,7 @@ class BatchPointwiseOpsPostGradFusion(BatchPointwiseOpsFusionFactory):
                 else ""
             )
             group_key = (
-                "batch_aten_" + self.opG.__name__.lower().split(".")[0],
+                "batch_aten_" + self.op.__name__.lower().split(".")[0],
                 str(input.meta["val"].shape),
                 str(node.kwargs.get("inplace", False)),
                 # pyre-fixme[16]
@@ -1442,5 +1442,5 @@ def group_batch_fusion_passes(graph: torch.fx.Graph, pre_grad=True):
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

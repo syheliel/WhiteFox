@@ -1,4 +1,14 @@
 {
-    "summary": "\nThe NumpyCompatNormalization class handles converting numpy-style argument names to PyTorch-style names in FX graphs. The vulnerable line iterates through kwargs without proper validation against the actual function signatures, which could lead to:\n1. Incorrect argument name conversions if kwargs contain invalid names\n2. Potential key errors when accessing inverse_mapping\n3. Silent failures if numpy-style args don't match any PyTorch params\n4. Unexpected behavior from passing wrong argument names to ops\n```\n\n```python\nclass NumpyCompatModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Using numpy-style kwargs that could trigger the vulnerable path\n        x = torch.stack([x, x], axis=1)  # 'axis' instead of 'dim'\n        x = torch.sum(x, keepdims=True)  # 'keepdims' instead of 'keepdim'\n        x = self.linear(x)\n        return x\n",
-    "python_code": "\nclass NumpyCompatModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n        \n    def forward(self, x):\n        # Using numpy-style kwargs that could trigger the vulnerable path\n        x = torch.stack([x, x], axis=1)  # 'axis' instead of 'dim'\n        x = torch.sum(x, keepdims=True)  # 'keepdims' instead of 'keepdim'\n        x = self.linear(x)\n        return x\n"
+    "summary": "\nThe NumpyCompatNormalization class handles converting numpy-style keyword arguments to PyTorch-style arguments in FX graphs. The vulnerable line processes kwargs without proper validation against the actual function signatures, which could lead to:\n1. Incorrect argument mappings if numpy kwargs don't match PyTorch signatures\n2. Silent failures if invalid kwargs are passed\n3. Potential runtime errors from mismatched arguments\n4. Loss of argument validation that would normally occur in PyTorch ops\n```\n\n```python\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        # Using numpy-style kwargs that will be converted\n        return torch.sum(x, axis=1, keepdims=True)\n\nmodel = Model()\nx = torch.randn(5, 10)\nout = model(x)\n```\n\n```yaml\n- nn.Linear\n- torch.sum\n- torch.mean\n- torch.max\n- torch.min\n- torch.prod\n- torch.var\n- torch.std\n",
+    "python_code": "\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.linear = nn.Linear(10, 10)\n    \n    def forward(self, x):\n        # Using numpy-style kwargs that will be converted\n        return torch.sum(x, axis=1, keepdims=True)\n\nmodel = Model()\nx = torch.randn(5, 10)\nout = model(x)\n```\n\n```yaml\n- nn.Linear\n- torch.sum\n- torch.mean\n- torch.max\n- torch.min\n- torch.prod\n- torch.var\n- torch.std\n",
+    "api": [
+        "nn.Linear",
+        "torch.sum",
+        "torch.mean",
+        "torch.max",
+        "torch.min",
+        "torch.prod",
+        "torch.var",
+        "torch.std"
+    ]
 }

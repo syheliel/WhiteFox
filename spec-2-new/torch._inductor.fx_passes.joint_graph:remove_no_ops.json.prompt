@@ -858,5 +858,5 @@ for to_dtype in (False, True):
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     

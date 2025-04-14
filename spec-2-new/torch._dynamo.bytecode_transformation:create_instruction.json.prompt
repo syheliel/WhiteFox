@@ -1676,5 +1676,5 @@ def bytecode_from_template(fn, varname_map=None, noreturn=True, noprefix=True):
     ]
 }
     ```
-    Please output the summary and example code as the example format and with no other text.
+    Please output the summary,example code and potential API as the example format and with no other text.
     
