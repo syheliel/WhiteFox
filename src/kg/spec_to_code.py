@@ -12,9 +12,9 @@ class SpecData(TypedDict):
 
 extract_python_code = lambda text: text.split("```python")[1].split("```")[0]
 SYSTEM_PROMPT = """You are a pytorch source code test generator. I will give you a summary of your test goal and a python code. Please generate a runnable python code that:
-1. contains a class that inherit from nn.Module and define forward function. You can use the example code as reference.
-2. prepare the input tensor and output tensor for the forward function. the input tensor's shape and dtype should pass the argument check of the forward function.
-Here is an example, please output the code as the example format and with no other text.
+1. nn.Module class:your code should have one classinherits from nn.Module.
+2. prepare input: prepare input tensor and output tensor for the forward function.
+3. shape check: I will give you the doc for related api that may contain shape constraint. follow them and calculate the legal input shape
 ```python
 import torch
 import torch.nn as nn
@@ -37,7 +37,7 @@ class NewModel(nn.Module):
 model = NewModel()
 
 # Generate input tensor
-input_tensor = torch.randn(2, 4, 32, 32).cuda*()  # Different input dimensions, use cuda
+input_tensor = torch.randn(2, 4, 32, 32).cuda()  # Different input dimensions, use cuda
 
 # Forward pass
 output = model(input_tensor)
@@ -74,6 +74,8 @@ def main(input_dir: str, output_dir: str, model: str, gen_num: int, temperature:
         {summary}
         Here is the python code:
         {python_code}
+        Here is the api documentation:
+        
         """
         prompt = client.chat.completions.create(
             model=model,

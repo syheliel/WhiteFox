@@ -58,7 +58,7 @@ SYSTEM_PROMPT = r"""
 You are an expert in pytorch bug hunting. I will give you a specific source code from pytorch and a list of function that is vulnerable. please:
 1. SUMMARY: summarize the function's usage
 2. EXAMPLE: give an example of how to trigger the target_line in using normal pytorch code without touch the inner API. the python code must only contain one pytorch module
-3. potential API: list the potential api 
+3. potential API: list the potential api under torch.nn and torch.functional.
 Here is your example output:
 ```summary
 The BatchLayernormFusion class handles fusing multiple layer normalization operations in PyTorch graphs. The vulnerable line checks that all epsilon values used in the layer norm operations are equal before fusing them. This is important because:
@@ -72,9 +72,6 @@ import torch
 import torch.nn as nn
 
 class FusedBatchLayerNorm(nn.Module):
-    """
-    融合 BatchNorm 和 LayerNorm 的模块
-    """
     def __init__(self, num_features):
         super(FusedBatchLayerNorm, self).__init__()
         self.bn = nn.BatchNorm1d(num_features)
@@ -138,7 +135,7 @@ def process_prompt_item(prompt_item, output_p, model):
     )
     summary = extract_summary(prompt.choices[0].message.content) # type: ignore
     python_code = extract_python_code(prompt.choices[0].message.content) # type: ignore
-    api = extract_api(prompt.choices[0].message.content) # type: ignore
+    api = yaml.load(extract_api(prompt.choices[0].message.content),yaml.SafeLoader) # type: ignore
     res = {
         "summary": summary,
         "python_code": python_code,
