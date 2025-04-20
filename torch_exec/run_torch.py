@@ -115,6 +115,7 @@ class CoverageManager:
             f"--source={torch.__path__[0]}",  # type: ignore
             f"--data-file={cov_data}",
             "-a",
+            "-m"
         ]
     
     def combine_coverage(self):
@@ -189,8 +190,6 @@ class ProcessManager:
         
         if validate:
             script_cmd.append("--validate")
-        if cov:
-            python_cmd.append("--cov")
             
         return python_cmd, script_cmd
     
@@ -286,7 +285,7 @@ def process_api_dir(api_dir: Path, result_p: Path, device: str, timeout: int,
 @click.option(
     "--result-dir", type=str, default="result-4-default", help="the result dir to store outputs"
 )
-@click.option("--device", type=str, default="cpu", help="the backend device to test")
+@click.option("--device", type=str, default="cuda", help="the backend device to test")
 @click.option("--timeout", type=int, default=20, help="timeout in seconds")
 @click.option("--cov", is_flag=True, default=False, help="collect coverage")
 @click.option(

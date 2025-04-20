@@ -162,8 +162,9 @@ def process_prompt_item(prompt_item: UnifiedPrompt, output_p:Path, model:str):
 @click.option("--input-dir", type=str, default="./prompt-1-new", required=True)
 @click.option("--output-dir", type=str, default="spec-2-new", required=True)
 @click.option("--model", type=click.Choice(ALL_MODEL), default="deepseek-v3-250324", help="Model to use for generate prompt")
+@click.option("--device", type=str, default="cuda", help="Device to use for generate prompt")
 @click.option("--max-workers", type=int, default=4, help="Maximum number of worker threads")
-def main(input_dir: str, output_dir: str, model: str, max_workers: int):
+def main(input_dir: str, output_dir: str, model: str, device: str, max_workers: int):
     input_p:Path = Path(input_dir)
     output_p:Path = Path(output_dir)
     output_p.mkdir(parents=True, exist_ok=True)

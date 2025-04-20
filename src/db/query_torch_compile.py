@@ -7,7 +7,7 @@ that are related to torch.compile functionality.
 
 import click
 from loguru import logger
-from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType
+from src.db.factory import EmbeddingFactory, EmbeddingType, ChromaVectorDB
 from rich.console import Console
 from typing import List
 
@@ -30,12 +30,6 @@ def format_code_snippet(source: str, content: str) -> str:
     help="Model name to use for embedding (optional)",
 )
 @click.option(
-    "--vector-db-type",
-    type=click.Choice([t.value for t in VectorDBType]),
-    default=VectorDBType.CHROMA.value,
-    help="Type of vector database to use",
-)
-@click.option(
     "--query",
     type=str,
     default="torch.compile implementation and usage examples",
@@ -47,7 +41,7 @@ def format_code_snippet(source: str, content: str) -> str:
     default=10,
     help="Number of results to return",
 )
-def main(embedding_type: str, model_name: str, vector_db_type: str, query: str, num_results: int):
+def main(embedding_type: str, model_name: str, query: str, num_results: int):
     """
     Query the vector database for code snippets related to torch.compile.
     """
@@ -58,7 +52,7 @@ def main(embedding_type: str, model_name: str, vector_db_type: str, query: str, 
     )
     
     # Create vector database instance
-    vector_db = VectorDBFactory.create_source_vector_db(vector_db_type=VectorDBType(vector_db_type))
+    vector_db = ChromaVectorDB(embedding)
     
     # Generate query embedding
     query_embedding = embedding.embed_query(query)

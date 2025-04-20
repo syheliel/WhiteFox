@@ -15,6 +15,6 @@ TORCH_BASE = Path("/lustre/home/2201213135/pytorch").resolve()
 CHROMADB_PATH = (Path(__file__).parent.parent / "vectordb" ).resolve()
 CHROMADB_PATH.mkdir(parents=True, exist_ok=True)
 
-CHROMADB_COLLECTION = "torch"
+PYTORCH_COLLECTION = "torch"
 
 OPTINFO_PATH = Path(__file__).parent.parent / "optim-0" / "optinfo.yaml"

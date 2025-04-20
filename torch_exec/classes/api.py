@@ -1,5 +1,5 @@
 class API:
-    def __init__(self, api_name):
+    def __init__(self, api_name: str):
         self.api = api_name
 
     def mutate(self):

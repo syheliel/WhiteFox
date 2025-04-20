@@ -1,7 +1,7 @@
 from langchain_core.documents import Document
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 from src.conf import TORCH_BASE
-from src.db.factory import EmbeddingFactory, EmbeddingType, VectorDBFactory, VectorDBType, BaseEmbedding, BaseVectorDB
+from src.db.factory import EmbeddingFactory, EmbeddingType, ChromaVectorDB, BaseEmbedding
 import click
 from loguru import logger
 from pathlib import Path
@@ -34,7 +34,7 @@ def list_source_files(root: Path, extensions: List[str]) -> List[Path]:
     return source_file_paths
 
 
-def process_chunk_batch(chunks: List[Document], embedding:BaseEmbedding, vector_db:BaseVectorDB, batch_size: int):
+def process_chunk_batch(chunks: List[Document], embedding:BaseEmbedding, vector_db:ChromaVectorDB, batch_size: int):
     """Process a batch of chunks in parallel."""
     embeddings = embedding.embed_documents([chunk.page_content for chunk in chunks])
     vector_db.add(
@@ -67,23 +67,17 @@ def process_chunk_batch(chunks: List[Document], embedding:BaseEmbedding, vector_
     help="Model name to use for embedding (optional)",
 )
 @click.option(
-    "--vector-db-type",
-    type=click.Choice([t.value for t in VectorDBType]),
-    default=VectorDBType.CHROMA.value,
-    help="Type of vector database to use",
+    "--device",
+    type=str,
+    default="cpu",
+    help="Device to use for embedding",
 )
-def main(input_dir: str, batch_size: int, num_workers: int, extensions: str, embedding_type: str, model_name: str, vector_db_type: str):
-    """
-    embed all source files in torch into vector database
-    Here is the default setting:
-    - Splitter: RecursiveCharacterTextSplitter with chunk_size=1000, chunk_overlap=200
-    - embedding model: voyage-code-3 (default)
-    """
+def main(input_dir: str, batch_size: int, num_workers: int, extensions: str, embedding_type: str, model_name: str, device: str):
     logger.info(f"input_dir: {input_dir}")
     logger.info(f"extensions: {extensions}")
     logger.info(f"embedding_type: {embedding_type}")
     logger.info(f"model_name: {model_name}")
-    logger.info(f"vector_db_type: {vector_db_type}")
+    logger.info(f"device: {device}")
     extensions_list = extensions.split(",")
     found_source_file = list_source_files(Path(input_dir), extensions_list)
 
@@ -102,8 +96,10 @@ def main(input_dir: str, batch_size: int, num_workers: int, extensions: str, emb
     chunks = unique_chunks(chunks)
     logger.info(f"Split into {len(chunks)} chunks")
 
-    # vectorDB part - use the new VectorDBFactory
-    vector_db = VectorDBFactory.create_source_vector_db(vector_db_type=VectorDBType(vector_db_type))
+    embedding = EmbeddingFactory.create_embedding(
+        EmbeddingType(embedding_type), model_name, device
+    )
+    vector_db = ChromaVectorDB(embedding)
     
     all_items = vector_db.get()
     all_ids = all_items["ids"]

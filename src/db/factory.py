@@ -3,59 +3,33 @@ from typing import Optional, TypedDict
 from .base import BaseEmbedding
 from .voyage_emb import VoyageEmbedding
 from .hg_emb import HuggingFaceEmbedding
-from abc import ABC, abstractmethod
 import chromadb
 from typing import List
 import numpy as np
-from src.conf import CHROMADB_COLLECTION, CHROMADB_PATH
+from src.conf import PYTORCH_COLLECTION, CHROMADB_PATH
 from pathlib import Path
 from hashlib import md5
 from chromadb.api.types import GetResult, QueryResult
 from loguru import logger
 from numpy.typing import NDArray
 from concurrent.futures import ProcessPoolExecutor, as_completed, Future
-from typing import Dict, Any, Tuple
+from typing import Dict, Tuple
 class EmbeddingType(Enum):
     VOYAGE = "voyage"
     HUGGINGFACE = "huggingface"
     
-class VectorDBType(Enum):
-    CHROMA = "chroma"
-
-class BaseVectorDB(ABC):
-    embedding: BaseEmbedding
-    """Base class for vector database implementations."""
-    
-    @abstractmethod
-    def add(self, ids:List[str], documents:List[str], embeddings:NDArray[np.float32], metadatas:Optional[List[Dict[str,Any]]]=None):
-        """Add documents to the vector database."""
-        pass
-    
-    @abstractmethod
-    def add_by_files(self, file_path:List[Path]):
-        """Add documents to the vector database by file path."""
-        pass
-    
-    @abstractmethod
-    def get(self, ids:Optional[List[str]]=None) -> GetResult:
-        """Get documents from the vector database."""
-        pass
-    
-    @abstractmethod
-    def query_by_emb(self, query_embeddings:NDArray[np.float32], n_results:int=10) -> QueryResult:
-        """Query the vector database."""
-        pass
 
 class Metadata(TypedDict):
     source: str
 
-class ChromaVectorDB(BaseVectorDB):
+class ChromaVectorDB:
+    embedding: BaseEmbedding
     """ChromaDB implementation of vector database."""
     
-    def __init__(self, collection_name: str = CHROMADB_COLLECTION, db_path:Path=CHROMADB_PATH, embedding_type:EmbeddingType=EmbeddingType.VOYAGE):
+    def __init__(self, embedding:BaseEmbedding, collection_name: str = PYTORCH_COLLECTION, db_path:Path=CHROMADB_PATH):
         self.client = chromadb.PersistentClient(path=str(db_path))
         self.collection = self.client.get_or_create_collection(collection_name)
-        self.embedding = EmbeddingFactory.create_embedding(embedding_type)
+        self.embedding = embedding
     
     def add(self, ids:List[str], documents:List[str], embeddings:NDArray[np.float32], metadatas:Optional[List[Metadata]]=None): # type: ignore
         """Add documents to the vector database."""
@@ -128,7 +102,7 @@ class EmbeddingFactory:
 
     @staticmethod
     def create_embedding(
-        embedding_type: EmbeddingType, model_name: Optional[str] = None
+        embedding_type: EmbeddingType, model_name: Optional[str] = None, device: str = "cuda"
     ) -> BaseEmbedding:
         """Create an embedding instance based on the specified type.
 
@@ -142,20 +116,11 @@ class EmbeddingFactory:
         if embedding_type == EmbeddingType.VOYAGE:
             return VoyageEmbedding(model=model_name or "voyage-code-3")
         elif embedding_type == EmbeddingType.HUGGINGFACE:
-            return HuggingFaceEmbedding(    
-                model_name=model_name or "Salesforce/codet5p-110m-embedding"
-            )
+            if model_name is None:
+                return HuggingFaceEmbedding(device=device)
+            else:
+                return HuggingFaceEmbedding(    
+                    model_name=model_name, device=device
+                )
         else:
             raise ValueError(f"Unsupported embedding type: {embedding_type}")
-
-class VectorDBFactory:
-    @staticmethod
-    def create_vector_db(vector_db_type: VectorDBType = VectorDBType.CHROMA, collection_name: str = CHROMADB_COLLECTION) -> BaseVectorDB:
-        if vector_db_type == VectorDBType.CHROMA:
-            return ChromaVectorDB(collection_name)
-        else:
-            raise ValueError(f"Unsupported vector database type: {vector_db_type}")
-    
-    @staticmethod
-    def create_source_vector_db(vector_db_type: VectorDBType = VectorDBType.CHROMA) -> BaseVectorDB:
-        return VectorDBFactory.create_vector_db(vector_db_type=vector_db_type, collection_name=CHROMADB_COLLECTION)

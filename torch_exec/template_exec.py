@@ -5,7 +5,7 @@ import src.conf  # type: ignore
 import astunparse  # type: ignore
 import os
 from pathlib import Path
-from typing import List, NamedTuple, TypedDict, Union, Any
+from typing import List, NamedTuple, TypedDict, Union, Any, Tuple
 import ast
 import traceback
 import torch
@@ -81,7 +81,7 @@ class CodeParser:
     def is_input(x: Any) -> bool:
         return torch.is_tensor(x)
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, device: str) -> None:
         self.transformers = [MultilineAssignTransformer(), LibAssignRemover()]
         self.imports = (
             "import os\nimport torch\nimport torch.nn.functional as F\nimport torch.nn as nn\n"
@@ -91,7 +91,7 @@ class CodeParser:
             "import torch.linalg as linalg\n"
         )
         self._init_code = "{} = torch.randn(1, 1, 1)\n"
-        self.config = config
+        self.device = device
 
     def input_init_code(self, arg_name: str) -> str:
         return self._init_code.format(arg_name)
@@ -166,7 +166,7 @@ class CodeParser:
                             class_init_code = (
                                 "func = "
                                 + ast.unparse(value)
-                                + f".to('{self.config['device']}')\n"
+                                + f".to('{self.device}')\n"
                             )
                         else:
                             class_init_code = ""
@@ -216,7 +216,7 @@ class CodeParser:
             class_init_code = class_init_args_code + class_init_code
         else:
             class_init_code = class_init_args_code
-            class_init_code += f"\nfunc = {class_name}({', '.join(class_init_required_args)}).to('{self.config['device']}')\n"
+            class_init_code += f"\nfunc = {class_name}({', '.join(class_init_required_args)}).to('{self.device}')\n"
         class_code += "\n" + class_init_code
 
         if len(inputs) < len(class_forward_args):
@@ -353,7 +353,7 @@ def core_oracle(
     config: Config, code: str, api_name: str, is_validate: bool = False
 ) -> None:
     logger.info(f"testing {api_name}")
-    codeParser = CodeParser(config)
+    codeParser = CodeParser(config["device"])
     example_p = config["temp_dir"] / "origin_code.py"
     example_p.touch(exist_ok=True)
     example_p.write_text("# origin code:\n" + code + '\n')
@@ -412,6 +412,36 @@ def core_loop(config: Config) -> None:
             )
 
 
+def execute_single_file(target_file_path: Path, device: str, temp_dir: Path, api_name: str) -> Tuple[ResType, str]:
+    code = target_file_path.read_text()
+    logger.info(f"testing {target_file_path.name}")
+    codeParser = CodeParser(device)
+    example_p = temp_dir / "origin_code.py"
+    example_p.touch(exist_ok=True)
+    example_p.write_text("# origin code:\n" + code + '\n')
+    logger.info(f"example_p: {example_p}")
+    class_def_code, tensors, input_init_code = codeParser.split_func_tensor(code)
+    imports = codeParser.imports
+
+    if len(tensors) == 0:
+        tensors.append("input_tensor")
+        input_init_code += codeParser.input_init_code("input_tensor")
+
+    class_def_code = imports + "\n" + class_def_code + "\n" + input_init_code + "\n"
+    logger.info(f"cross checking {api_name}")
+    func_def_code = class_def_code + f"test_inputs = [{', '.join(tensors)}]\n"
+
+    gencode_file = temp_dir / "gencode" / (api_name + ".py")
+    gencode_file.parent.mkdir(parents=True, exist_ok=True)
+    gencode_file.touch(exist_ok=True)
+    rand_seed = 420
+    result, errors = test_wrapper(
+        func_def_code, rand_seed, tensors, device, gencode_file)
+
+    error_msg = "\n".join([f"{k}:\n{v}\n" for k, v in errors.items()])
+    error_msg = "\n'''\n" + error_msg + "'''"
+    return result, error_msg
+
 
 @click.command()
 @click.option("--api-dir", type=str, required=True, help="the dir to store code genereate for one api")
@@ -426,7 +456,7 @@ def main(
 ) -> None:
     """Template execution script for testing PyTorch models."""
     api_p = Path(api_dir)
-    if not api_p.exists():
+    if not api_p.exists(): # Restore original check
         raise FileNotFoundError(f"API directory {api_dir} does not exist")
     res_p = Path(res_dir)
     res_p.mkdir(parents=True, exist_ok=True)
@@ -445,6 +475,7 @@ def main(
         "gencode_dir": gencode_p,
     }
 
+    # target_file_p = Path(target_file) if target_file else None # Removed
 
     if config["cov"]:
         config["match_cov_file"] = Path(
@@ -453,7 +484,9 @@ def main(
         torch.version.log_path = str(config["match_cov_file"])  # type: ignore
 
     # Run the core loop with the config
+    # Removed conditional logic, always run core_loop
     core_loop(config)
+
     # Some sneaky code may contain exit(0) or other equivalent calls
     # We distinguish ourselves from them with a magic number
     logger.info("exit with code {}".format(ProcessStatus.FINISH))
